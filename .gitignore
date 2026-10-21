@@ -13,7 +13,7 @@ build/
 
 # Node
 node_modules/
-frontend/dist/
+src/frontend/dist/
 coverage/
 
 # Secrets and env
@@ -22,8 +22,8 @@ coverage/
 !.env.example
 
 # Data (downloaded by `make data`, never committed)
-data/raw/*
-!data/raw/.gitkeep
+src/data/raw/*
+!src/data/raw/.gitkeep
 *.sqlite
 *.db
 
