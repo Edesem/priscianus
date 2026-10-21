@@ -1,0 +1,44 @@
+[project]
+name = "latin-tutor"
+version = "0.1.0"
+description = "Latin grammar tutor whose LLM output is verified by a morphology engine."
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.40",
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/latin_tutor"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=latin_tutor --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+
+[[tool.mypy.overrides]]
+module = ["latin_tutor.morphology.*", "latin_tutor.verifier.*"]
+strict = true

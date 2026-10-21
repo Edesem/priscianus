@@ -5,3 +5,24 @@ This is an AI integrated product, aimed at providing better tools for learning L
 ## Plan
 
 The current plan for this project can be referred to at [docs/plan.md](docs/plan.md).
+
+## Getting started
+
+Requires [uv](https://docs.astral.sh/uv/), [pnpm](https://pnpm.io/) and [pre-commit](https://pre-commit.com/).
+
+```sh
+cp .env.example .env   # add your ANTHROPIC_API_KEY
+make setup
+make test
+make lint
+```
+
+## Results
+
+| Mode | Model | Accuracy | Cost / request |
+|---|---|---|---|
+| _TBD_ | | | |
+
+## Licence
+
+Code: MIT. Data is licensed separately; see [DATA_LICENCES.md](DATA_LICENCES.md).
