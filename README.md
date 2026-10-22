@@ -17,9 +17,12 @@ Requires [uv](https://docs.astral.sh/uv/), [pnpm](https://pnpm.io/) and [pre-com
 ```sh
 cp .env.example .env   # add your ANTHROPIC_API_KEY
 make setup
+make dev    # API on :8000, frontend on :5173
 make test
 make lint
 ```
+
+Run `make` on its own to list every command.
 
 ## Results
 
