@@ -1,14 +1,14 @@
 # Rules for AI agents in this repo
 
 ## Hand-written zones: do not write code here
-- `src/backend/latin_tutor/morphology/`
-- `src/backend/latin_tutor/verifier/`
+- `src/backend/priscianus/morphology/`
+- `src/backend/priscianus/verifier/`
 - `src/evals/`
 
 Agents may explain, review and suggest in these areas, but must not create or edit code there.
 
 ## Where agents work
-`src/backend/latin_tutor/api/`, `src/backend/latin_tutor/llm/`, `src/frontend/`, CI, Docker, docs, always through PRs the owner reviews.
+`src/backend/priscianus/api/`, `src/backend/priscianus/llm/`, `src/frontend/`, CI, Docker, docs, always through PRs the owner reviews.
 
 ## Commands
 - `make setup`: install deps and git hooks

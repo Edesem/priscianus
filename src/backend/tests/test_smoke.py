@@ -1,5 +1,5 @@
-import latin_tutor
+import priscianus
 
 
 def test_package_imports() -> None:
-    assert latin_tutor is not None
+    assert priscianus is not None

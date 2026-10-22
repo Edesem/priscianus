@@ -1,4 +1,8 @@
-# Verified Latin Tutor
+# Priscianus
+
+> *Noli caput Prisciani frangere!* ("Don't break Priscian's head!")
+
+Named after Priscian (Priscianus Caesariensis), whose *Institutiones Grammaticae* was the standard Latin grammar for a thousand years. A grammatical error was once said to "break Priscian's head".
 
 This is an AI integrated product, aimed at providing better tools for learning Latin grammar. Due to the lack of Latin data compared to English data, as well as the lack of Latin educated people, it is difficult to truly verify an LLMs output is actually correct. This product uses a morphology engine to confirm and verify answers that the LLM outputs.
 
