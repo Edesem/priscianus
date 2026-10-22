@@ -12,6 +12,7 @@ Agents may explain, review and suggest in these areas, but must not create or ed
 
 ## Commands
 - `make setup`: install deps and git hooks
+- `make dev`: run backend (:8000) and frontend (:5173) together; `make backend` / `make frontend` run one
 - `make test`: pytest (with coverage) and frontend tests
 - `make lint`: ruff, ruff format check, mypy (strict on morphology/ and verifier/), frontend lint
 - `make format`: auto-fix Python
