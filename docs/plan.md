@@ -1,4 +1,4 @@
-# Verified Latin Tutor — Project Plan
+# Priscianus — Project Plan
 
 **One-line pitch:** an LLM tutor that explains Latin grammar and generates exercises, where every claim about a word form ("*amāvērunt* is 3rd person plural perfect active indicative of *amō*") is checked against an authoritative morphology source before the learner sees it. The project measures how often the raw model is wrong and how much verification fixes it.
 

@@ -1,5 +1,5 @@
 [project]
-name = "latin-tutor"
+name = "priscianus"
 version = "0.1.0"
 description = "Latin grammar tutor whose LLM output is verified by a morphology engine."
 requires-python = ">=3.12"
@@ -23,11 +23,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["latin_tutor"]
+packages = ["priscianus"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=latin_tutor --cov-report=term-missing"
+addopts = "--cov=priscianus --cov-report=term-missing"
 
 [tool.ruff]
 line-length = 100
@@ -40,5 +40,5 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 
 [[tool.mypy.overrides]]
-module = ["latin_tutor.morphology.*", "latin_tutor.verifier.*"]
+module = ["priscianus.morphology.*", "priscianus.verifier.*"]
 strict = true

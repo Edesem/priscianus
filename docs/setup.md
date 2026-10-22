@@ -1,4 +1,4 @@
-# Day-one setup: Verified Latin Tutor
+# Day-one setup: Priscianus
 
 How to take [plan.md](plan.md) into your IDE and run it like a professional project from the first commit. Defaults are picked where there's a choice; change any of them freely.
 
@@ -6,7 +6,7 @@ How to take [plan.md](plan.md) into your IDE and run it like a professional proj
 
 ## 1. Create the repo (today, ~30 minutes)
 
-1. On GitHub, create **`verified-latin-tutor`** under your account (`Edesem`). **Public**, with a README, a `.gitignore` for Python, and the **MIT** licence.
+1. On GitHub, create **`priscianus`** under your account (`Edesem`). **Public**, with a README, a `.gitignore` for Python, and the **MIT** licence.
 2. Clone it locally and open it in VS Code.
 3. Attach it to this project in **Project settings → Resources** so Claude can work on it with you (scaffolding, reviews, CI fixes).
 4. Copy `plan.md` into the repo as `docs/plan.md`. The plan lives with the code from now on.
@@ -31,10 +31,10 @@ How to take [plan.md](plan.md) into your IDE and run it like a professional proj
 A single repo holding the backend, evals and front end.
 
 ```
-verified-latin-tutor/
+priscianus/
 ├── backend/
 │   ├── pyproject.toml
-│   ├── src/latin_tutor/
+│   ├── src/priscianus/
 │   │   ├── morphology/     # index, normaliser, lookup      ✍️ hand-written
 │   │   ├── verifier/       # claim checking, repair loop    ✍️ hand-written
 │   │   ├── llm/            # Claude client, prompts, tools
@@ -90,7 +90,7 @@ The ✍️/🤖 split matches your choice: you write the checker, the verify loo
 
 ### CLAUDE.md (rules for agents)
 Put a short `CLAUDE.md` at the root so every agent session follows your split:
-- `backend/src/latin_tutor/morphology/`, `verifier/` and `evals/` are hand-written: agents may explain, review and suggest, but must not write code there.
+- `backend/src/priscianus/morphology/`, `verifier/` and `evals/` are hand-written: agents may explain, review and suggest, but must not write code there.
 - Agents work in `api/`, `frontend/`, CI and Docker, through PRs you review.
 - How to run the tests, the lint commands, and the commit style.
 

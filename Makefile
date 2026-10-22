@@ -10,7 +10,7 @@ test:
 	@if [ -f src/frontend/package.json ]; then cd src/frontend && pnpm test --run; fi
 
 lint:
-	cd src/backend && uv run ruff check . && uv run ruff format --check . && uv run mypy latin_tutor
+	cd src/backend && uv run ruff check . && uv run ruff format --check . && uv run mypy priscianus
 	@if [ -f src/frontend/package.json ]; then cd src/frontend && pnpm lint; fi
 
 format:
