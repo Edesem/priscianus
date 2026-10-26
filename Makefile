@@ -44,8 +44,8 @@ clean: ## Remove caches and build output
 	rm -f src/backend/.coverage
 	rm -rf src/frontend/dist
 
-data: ## Download data (not yet implemented)
-	@echo "No data scripts yet (Milestone 1: Wiktextract downloader)."
+data: ## Download raw data into src/data/raw/ (skips files already present)
+	cd src/backend && uv run python ../data/scripts/download_wiktextract.py
 
 eval-smoke: ## Run the eval smoke test (not yet implemented)
 	@echo "Eval smoke test arrives in Milestone 3."
