@@ -35,16 +35,16 @@ priscianus/
 ├── backend/
 │   ├── pyproject.toml
 │   ├── src/priscianus/
-│   │   ├── morphology/     # index, normaliser, lookup      ✍️ hand-written
-│   │   ├── verifier/       # claim checking, repair loop    ✍️ hand-written
+│   │   ├── morphology/     # index, normaliser, lookup
+│   │   ├── verifier/       # claim checking, repair loop
 │   │   ├── llm/            # Claude client, prompts, tools
-│   │   └── api/            # FastAPI routes                 🤖 agent-assisted
+│   │   └── api/            # FastAPI routes
 │   └── tests/
-├── evals/                  # datasets, runners, reports      ✍️ hand-written
+├── evals/                  # datasets, runners, reports
 ├── data/
 │   ├── scripts/            # build the index: `make data`
 │   └── raw/                # gitignored downloads
-├── frontend/               # Vite + React + TS               🤖 agent-assisted
+├── frontend/               # Vite + React + TS
 ├── docs/
 │   ├── plan.md
 │   └── adr/                # architecture decision records
@@ -59,8 +59,6 @@ priscianus/
 ├── .pre-commit-config.yaml
 ├── README.md · LICENSE · DATA_LICENCES.md · CONTRIBUTING.md
 ```
-
-The ✍️/🤖 split matches your choice: you write the checker, the verify loop and the eval harness yourself, and agents help with the routes, the UI and the infrastructure.
 
 ---
 
@@ -89,8 +87,7 @@ The ✍️/🤖 split matches your choice: you write the checker, the verify loo
 - **CI** (GitHub Actions): lint, type-check and tests on every PR, plus the eval smoke test from milestone 3. Dependabot for both Python and npm.
 
 ### CLAUDE.md (rules for agents)
-Put a short `CLAUDE.md` at the root so every agent session follows your split:
-- `backend/src/priscianus/morphology/`, `verifier/` and `evals/` are hand-written: agents may explain, review and suggest, but must not write code there.
+Put a short `CLAUDE.md` at the root so every agent session follows the project rules:
 - Agents work in `api/`, `frontend/`, CI and Docker, through PRs you review.
 - How to run the tests, the lint commands, and the commit style.
 
