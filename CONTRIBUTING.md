@@ -4,5 +4,3 @@
 2. Branch from `main`, use Conventional Commits.
 3. `make lint && make test` before pushing.
 4. Open a PR using the template; CI must pass.
-
-See `CLAUDE.md` for the hand-written vs agent-assisted split.
