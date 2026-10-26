@@ -1,8 +1,5 @@
 # Rules for AI agents in this repo
 
-## Where agents work
-`src/backend/priscianus/api/`, `src/backend/priscianus/llm/`, `src/frontend/`, CI, Docker, docs, always through PRs the owner reviews.
-
 ## Commands
 - `make setup`: install deps and git hooks
 - `make dev`: run backend (:8000) and frontend (:5173) together; `make backend` / `make frontend` run one
