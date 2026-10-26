@@ -1,6 +1,6 @@
 import pytest
 
-from priscianus.morphology.normaliser import key_loose
+from priscianus.morphology.normaliser import key_loose, key_macron
 
 
 @pytest.mark.parametrize(
@@ -57,3 +57,26 @@ def test_key_loose_leaves_enclitics_and_spelling_variants_distinct(
 
 def test_key_loose_of_empty_string_is_empty() -> None:
     assert key_loose("") == ""
+
+
+@pytest.mark.parametrize(
+    ("form", "expected"),
+    [
+        ("amāvērunt", "amāuērunt"),
+        ("RĒX", "rēx"),
+        ("Vīvō", "uīuō"),
+        ("ămō", "amō"),  # breve dropped, length kept
+        ("amo\u0304", "am\u014d"),  # NFD input comes back composed
+        ("Ȳ", "ȳ"),
+        ("virumque", "uirumque"),
+        ("Æneās", "aeneās"),
+        ("", ""),
+    ],
+)
+def test_key_macron_keeps_length_marks(form: str, expected: str) -> None:
+    assert key_macron(form) == expected
+
+
+def test_key_macron_and_key_loose_agree_once_length_is_removed() -> None:
+    form = "Jūlius Caesar"
+    assert key_loose(key_macron(form)) == key_loose(form)
