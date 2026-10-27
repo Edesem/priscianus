@@ -60,6 +60,10 @@ _INSERT_ANALYSIS = (
 )
 
 _SOURCE = "wiktionary"
+
+# Forms from inflection tables carry full feature sets. Headword-line forms (no source)
+# carry only a tag or two, such as the genitive or the lemma's gender, so they are not analyses.
+_TABLE_SOURCES = frozenset({"declension", "conjugation", "inflection"})
 _SCHEMA_VERSION = "1"
 
 _LICENCE = (
@@ -117,6 +121,8 @@ def _dump_date(dump: Path) -> str:
 def _readings(entry: dict[str, Any], report: BuildReport) -> list[tuple[str, dict[str, str]]]:
     rows: list[tuple[str, dict[str, str]]] = []
     for form in entry.get("forms", []):
+        if form.get("source") not in _TABLE_SOURCES:
+            continue
         try:
             readings = map_tags(form.get("tags", []))
         except UnknownTagError as err:

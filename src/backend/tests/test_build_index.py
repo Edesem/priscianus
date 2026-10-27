@@ -212,3 +212,27 @@ def test_aspect_keeps_imperfect_perfect_and_future_perfect_distinct(tmp_path: Pa
         ("amāverit", "Fut", "Perf"),
         ("amāvit", "Past", "Perf"),
     ]
+
+
+def test_only_inflection_table_forms_become_analyses(tmp_path: Path) -> None:
+    thesaurus = {
+        "word": "thēsaurus",
+        "pos": "noun",
+        "forms": [
+            {"form": "thēsaurus", "tags": ["canonical", "masculine"]},
+            {"form": "thēsaurī", "tags": ["genitive"]},
+            {"form": "thēsaurō", "tags": ["dative", "bogus-tag"]},
+            _form("thēsaurī", "genitive", "singular"),
+        ],
+    }
+    db = tmp_path / "morphology.db"
+
+    report = build_index(_write_dump(tmp_path / "dump.jsonl", [thesaurus]), db)
+
+    rows = (
+        sqlite3.connect(db)
+        .execute('SELECT form_display, "case", number, gender FROM analyses')
+        .fetchall()
+    )
+    assert rows == [("thēsaurī", "Gen", "Sing", None)]
+    assert report.skipped_forms == {}
