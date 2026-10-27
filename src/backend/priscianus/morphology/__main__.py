@@ -29,7 +29,7 @@ def main(argv: Sequence[str] | None = None, db: Path = DEFAULT_DB) -> int:
     print(f"{args.word}: {count} {'analysis' if count == 1 else 'analyses'}")
     for analysis in analyses:
         features = ", ".join(f"{name}={value}" for name, value in analysis.features.items())
-        print(f"  {analysis.lemma_display} ({analysis.pos}): {features}")
+        print(f"  {analysis.form}: form of {analysis.lemma_display} ({analysis.pos}): {features}")
     return 0
 
 
