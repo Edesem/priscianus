@@ -92,11 +92,16 @@ def build_index(dump: Path, db: Path) -> BuildReport:
     con = sqlite3.connect(db)
     con.executescript(_SCHEMA)
     digest = hashlib.sha256(_SCHEMA_VERSION.encode())
+    participles: dict[int, str] = {}
     with dump.open("rb") as f:
         for line in f:
             digest.update(line)
             report.entries += 1
-            _add_entry(con, json.loads(line), report)
+            entry = json.loads(line)
+            lemma_id = _add_entry(con, entry, report)
+            if lemma_id is not None and _is_participle(entry):
+                participles[lemma_id] = key_loose(entry["word"])
+    _merge_participle_features(con, participles)
     con.executemany(
         "INSERT INTO meta (key, value) VALUES (?, ?)",
         [
@@ -132,11 +137,41 @@ def _readings(entry: dict[str, Any], report: BuildReport) -> list[tuple[str, dic
     return rows
 
 
-def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildReport) -> None:
+def _is_participle(entry: dict[str, Any]) -> bool:
+    return entry["pos"] == "verb" and any(
+        "participle" in sense.get("tags", []) for sense in entry.get("senses", [])
+    )
+
+
+def _merge_participle_features(con: sqlite3.Connection, participles: dict[int, str]) -> None:
+    """Copy Tense/Aspect/Voice/VerbForm from a verb's participle row onto the participle lemma.
+
+    Wiktionary puts tense and voice on the verb's row (no case) and case, number and gender
+    on the participle's own lemma (no tense), so neither alone is a full analysis. The two
+    are linked by the participle's citation form. An ambiguous link is left unmerged.
+    """
+    by_citation: dict[str, set[tuple[str | None, ...]]] = {}
+    for key, *features in con.execute(
+        "SELECT key_loose, tense, aspect, voice, verb_form FROM analyses"
+        " WHERE verb_form = 'Part' AND \"case\" IS NULL"
+    ):
+        by_citation.setdefault(key, set()).add(tuple(features))
+    for lemma_id, citation in participles.items():
+        found = by_citation.get(citation, set())
+        if len(found) != 1:
+            continue
+        con.execute(
+            "UPDATE analyses SET tense = ?, aspect = ?, voice = ?, verb_form = ?"
+            " WHERE lemma_id = ? AND verb_form IS NULL",
+            (*next(iter(found)), lemma_id),
+        )
+
+
+def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildReport) -> int | None:
     rows = _readings(entry, report)
     if not rows:
         report.skipped["no inflected forms"] += 1
-        return
+        return None
     cur = con.execute(
         "INSERT INTO lemmas (lemma, lemma_display, pos, source) VALUES (?, ?, ?, ?)",
         (key_loose(entry["word"]), entry["word"], entry["pos"], _SOURCE),
@@ -149,6 +184,7 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
             (cur.lastrowid, display, key_loose(display), key_macron(display), *values, _SOURCE),
         )
         report.analyses += 1
+    return cur.lastrowid
 
 
 def main(argv: Sequence[str] | None = None) -> None:

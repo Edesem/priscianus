@@ -236,3 +236,92 @@ def test_only_inflection_table_forms_become_analyses(tmp_path: Path) -> None:
     )
     assert rows == [("thēsaurī", "Gen", "Sing", None)]
     assert report.skipped_forms == {}
+
+
+def _verb_with_participles() -> dict[str, object]:
+    return {
+        "word": "amō",
+        "pos": "verb",
+        "forms": [
+            _form("amātus", "perfect", "passive", "participle", source="conjugation"),
+            _form("amandus", "future", "passive", "participle", source="conjugation"),
+        ],
+    }
+
+
+def _participle(word: str, *forms: tuple[str, ...]) -> dict[str, object]:
+    return {
+        "word": word,
+        "pos": "verb",
+        "senses": [{"glosses": ["loved"], "tags": ["participle"]}],
+        "forms": [_form(f[0], *f[1:]) for f in forms],
+    }
+
+
+def test_participle_lemma_analyses_gain_tense_and_voice_from_the_verb(tmp_path: Path) -> None:
+    amatus = _participle(
+        "amātus",
+        ("amātus", "nominative", "singular", "masculine"),
+        ("amātum", "accusative", "singular", "masculine"),
+    )
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [amatus, _verb_with_participles()]), db)
+
+    rows = (
+        sqlite3.connect(db)
+        .execute(
+            'SELECT l.lemma, a.form_display, a."case", a.number, a.gender, a.tense, a.aspect,'
+            " a.voice, a.verb_form FROM analyses a JOIN lemmas l ON l.id = a.lemma_id"
+            " WHERE l.lemma = 'amatus' ORDER BY a.form_display"
+        )
+        .fetchall()
+    )
+    assert rows == [
+        ("amatus", "amātum", "Acc", "Sing", "Masc", "Past", "Perf", "Pass", "Part"),
+        ("amatus", "amātus", "Nom", "Sing", "Masc", "Past", "Perf", "Pass", "Part"),
+    ]
+
+
+def test_gerundive_participle_is_tagged_future_passive(tmp_path: Path) -> None:
+    amandus = _participle("amandus", ("amandī", "genitive", "singular", "masculine"))
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [_verb_with_participles(), amandus]), db)
+
+    row = (
+        sqlite3.connect(db)
+        .execute(
+            "SELECT tense, voice, verb_form FROM analyses a JOIN lemmas l ON l.id = a.lemma_id"
+            " WHERE l.lemma = 'amandus'"
+        )
+        .fetchone()
+    )
+    assert row == ("Fut", "Pass", "Part")
+
+
+def test_participle_without_a_matching_verb_form_is_left_as_is(tmp_path: Path) -> None:
+    orphan = _participle("amātus", ("amātus", "nominative", "singular", "masculine"))
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [orphan]), db)
+
+    row = sqlite3.connect(db).execute("SELECT tense, voice, verb_form FROM analyses").fetchone()
+    assert row == (None, None, None)
+
+
+def test_participle_headword_without_macrons_still_links_to_the_verb(tmp_path: Path) -> None:
+    amatus = _participle("amatus", ("amātus", "nominative", "singular", "masculine"))
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [amatus, _verb_with_participles()]), db)
+
+    row = (
+        sqlite3.connect(db)
+        .execute(
+            "SELECT tense, aspect, voice, verb_form FROM analyses a"
+            " JOIN lemmas l ON l.id = a.lemma_id WHERE l.lemma = 'amatus'"
+        )
+        .fetchone()
+    )
+    assert row == ("Past", "Perf", "Pass", "Part")
