@@ -69,3 +69,32 @@ def test_report_counts_rows_and_skipped_entries(tmp_path: Path) -> None:
     assert report.lemmas == 1
     assert report.analyses == 2
     assert report.skipped == {"no inflected forms": 1, "unknown tag: bogus-tag": 1}
+
+
+def test_meta_records_schema_version_dump_date_and_build_hash(tmp_path: Path) -> None:
+    dump = _write_dump(tmp_path / "dump.jsonl", [ROSA])
+    (tmp_path / "dump.jsonl.meta.json").write_text(
+        json.dumps({"last_modified": "Wed, 21 Oct 2026 13:51:28 GMT"})
+    )
+    db = tmp_path / "morphology.db"
+
+    build_index(dump, db)
+
+    meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
+    assert meta["schema_version"] == "1"
+    assert meta["dump_date"] == "Wed, 21 Oct 2026 13:51:28 GMT"
+    assert len(meta["build_hash"]) == 64
+
+
+def test_build_hash_is_reproducible_and_tracks_the_dump(tmp_path: Path) -> None:
+    def build_hash(name: str, entries: list[dict[str, object]]) -> str:
+        db = tmp_path / f"{name}.db"
+        build_index(_write_dump(tmp_path / f"{name}.jsonl", entries), db)
+        return str(
+            sqlite3.connect(db)
+            .execute("SELECT value FROM meta WHERE key='build_hash'")
+            .fetchone()[0]
+        )
+
+    assert build_hash("a", [ROSA]) == build_hash("b", [ROSA])
+    assert build_hash("a", [ROSA]) != build_hash("c", [ROSA, ROSA])

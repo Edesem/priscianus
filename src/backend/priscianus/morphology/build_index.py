@@ -1,5 +1,6 @@
 """Build the SQLite morphology index from the Wiktextract Latin dump."""
 
+import hashlib
 import json
 import sqlite3
 from collections import Counter
@@ -11,6 +12,7 @@ from priscianus.morphology.normaliser import key_loose, key_macron
 from priscianus.morphology.ud_features import UnknownTagError, map_tags
 
 _SCHEMA = """
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE lemmas (
     id INTEGER PRIMARY KEY,
     lemma TEXT NOT NULL,
@@ -48,6 +50,7 @@ _COLUMNS: dict[str, str] = {
 }
 
 _SOURCE = "wiktionary"
+_SCHEMA_VERSION = "1"
 
 
 @dataclass
@@ -63,13 +66,30 @@ def build_index(dump: Path, db: Path) -> BuildReport:
     db.unlink(missing_ok=True)
     con = sqlite3.connect(db)
     con.executescript(_SCHEMA)
-    with dump.open(encoding="utf-8") as f:
+    digest = hashlib.sha256(_SCHEMA_VERSION.encode())
+    with dump.open("rb") as f:
         for line in f:
+            digest.update(line)
             report.entries += 1
             _add_entry(con, json.loads(line), report)
+    con.executemany(
+        "INSERT INTO meta (key, value) VALUES (?, ?)",
+        [
+            ("schema_version", _SCHEMA_VERSION),
+            ("dump_date", _dump_date(dump)),
+            ("build_hash", digest.hexdigest()),
+        ],
+    )
     con.commit()
     con.close()
     return report
+
+
+def _dump_date(dump: Path) -> str:
+    sidecar = dump.with_name(dump.name + ".meta.json")
+    if not sidecar.exists():
+        return "unknown"
+    return str(json.loads(sidecar.read_text()).get("last_modified", "unknown"))
 
 
 def _readings(entry: dict[str, Any]) -> list[tuple[str, dict[str, str]]]:
