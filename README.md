@@ -36,7 +36,7 @@ uv run python -m priscianus.morphology parse amor
 ```
 amor: 2 analyses
   amor: form of amor (noun): Case=Nom, Number=Sing
-  amor: form of amō (verb): Number=Sing, Person=1, Tense=Pres, Mood=Ind, Voice=Pass, VerbForm=Fin
+  amor: form of amō (verb): Person=1, Number=Sing, Tense=Pres, Mood=Ind, Voice=Pass, VerbForm=Fin
 ```
 
 Unknown words print `No analyses found for '<word>'.` to stderr and exit with status 1.

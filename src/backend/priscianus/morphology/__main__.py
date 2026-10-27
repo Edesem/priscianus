@@ -8,6 +8,24 @@ from pathlib import Path
 from priscianus.morphology.build_index import DEFAULT_DB
 from priscianus.morphology.lookup import lookup_form
 
+_FEATURE_ORDER = (
+    "Case",
+    "Gender",
+    "Person",
+    "Number",
+    "Degree",
+    "Tense",
+    "Aspect",
+    "Mood",
+    "Voice",
+    "VerbForm",
+)
+
+
+def _describe(features: dict[str, str]) -> str:
+    ordered = sorted(features, key=lambda f: _FEATURE_ORDER.index(f) if f in _FEATURE_ORDER else 99)
+    return ", ".join(f"{name}={features[name]}" for name in ordered)
+
 
 def main(argv: Sequence[str] | None = None, db: Path = DEFAULT_DB) -> int:
     parser = argparse.ArgumentParser(prog="python -m priscianus.morphology")
@@ -28,7 +46,7 @@ def main(argv: Sequence[str] | None = None, db: Path = DEFAULT_DB) -> int:
     count = len(analyses)
     print(f"{args.word}: {count} {'analysis' if count == 1 else 'analyses'}")
     for analysis in analyses:
-        features = ", ".join(f"{name}={value}" for name, value in analysis.features.items())
+        features = _describe(analysis.features)
         print(f"  {analysis.form}: form of {analysis.lemma_display} ({analysis.pos}): {features}")
     return 0
 

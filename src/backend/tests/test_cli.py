@@ -45,7 +45,7 @@ def test_parse_prints_every_analysis_of_an_ambiguous_form(
     assert "amor" in out
     assert "2 analyses" in out
     assert "amor: form of amor (noun): Case=Nom, Number=Sing" in out
-    verb = "Number=Sing, Person=1, Tense=Pres, Mood=Ind, Voice=Pass, VerbForm=Fin"
+    verb = "Person=1, Number=Sing, Tense=Pres, Mood=Ind, Voice=Pass, VerbForm=Fin"
     assert f"amor: form of amō (verb): {verb}" in out
 
 
