@@ -108,14 +108,23 @@ def _expected_features(analysis: dict[str, Any]) -> dict[str, str]:
     """Whitaker's features for one analysis, minus what the index never records.
 
     Wiktionary tables give noun forms no gender (it belongs to the lemma) and
-    leave positive adjectives without a degree, so neither can disagree.
+    leave positive adjectives without a degree, so neither can disagree. It
+    also tags every form of a deponent Voice=Act where Whitaker's says passive
+    (see ADR-002), so voice is not compared for deponents.
     """
     features = whitakers_to_ud(analysis["infl"], verb_form=analysis["verb_form"])
     if analysis["pos"] == "N":
         features.pop("Gender", None)
     if features.get("Degree") == "Pos":
         del features["Degree"]
+    if analysis["pos"] == "V" and _is_deponent(analysis.get("entry", "")):
+        features.pop("Voice", None)
     return features
+
+
+def _is_deponent(entry: str) -> bool:
+    """Whether a Whitaker's dictionary entry ("loquor, loqui, locutus sum") is deponent."""
+    return entry.endswith(" sum")
 
 
 def spot_check(fixture: Path = DEFAULT_FIXTURE, db: Path = DEFAULT_DB) -> list[Comparison]:
