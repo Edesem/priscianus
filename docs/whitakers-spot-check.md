@@ -17,22 +17,20 @@ Closes the validation step of M1 (issue #10): does the morphology index agree wi
 | Cause | Kind | Forms | Follow-up |
 |---|---|---|---|
 | Locative singular/plural listed for every noun and adjective in Whitaker's | Index gap (by design) | puellae, domini, pueri, regi, rege, nomine, mare, bonae, fortibus, amari, eris, ire | None. Wiktionary tabulates the locative only for place-like nouns. Nothing to fix unless the tutor needs it. |
-| Participle, gerundive and supine split across two lemmas, so no analysis has both case and tense | Index gap (data model) | amatus, amantem, amandi, amatum, monitus, auditum, latum, exercitum | Follow-up A |
-| Comparative and superlative forms carry no `Degree` | Index gap | melior, meliorem, optimus, pulchriorem | Follow-up B |
-| Deponent passive-looking forms tagged `Voice=Act` by Wiktionary, `Pass` by Whitaker's | Convention difference (Wiktionary labelling) | loquitur, sequuntur, hortamur, moritur, utitur | Follow-up C |
+| Participle, gerundive and supine split across two lemmas, so no analysis has both case and tense | Index gap (data model) | amatus, amantem, amandi, amatum, monitus, auditum, latum, exercitum | #29 |
+| Comparative and superlative forms carry no `Degree` | Index gap | melior, meliorem, optimus, pulchriorem | #30 |
+| Deponent passive-looking forms tagged `Voice=Act` by Wiktionary, `Pass` by Whitaker's | Convention difference (Wiktionary labelling) | loquitur, sequuntur, hortamur, moritur, utitur | #31 |
 | Rare readings Whitaker's lists that Wiktionary lacks | Index gap | *rosarum* (participle of a rare verb), *esse* (participle of *edo*), *eris* (a noun), *ire* (2nd singular passive) | None individually |
 
 A form can appear in more than one row; the counts above are of forms, not readings.
 
 No disagreement was traced to a Wiktionary error. For *rosarum*, *esse* and *eris*, the Whitaker's reading is real but rare, and the index's missing reading is a gap, not a mistake.
 
-## Follow-ups to open
+## Follow-ups
 
-I could not open these issues from the session, so they are listed here to be filed (labels `morphology`, `data`).
-
-- **A. morphology: participles, gerundives and supines lack case and tense in one analysis.** The verb lemma holds `{Tense, Voice, VerbForm=Part}` with no case; the participle lemma holds `{Case, Number, Gender}` with no tense. Merge the verb row's tense, aspect, voice and verb form into the participle's analyses at build time, and decide how gerundives and supines are tagged.
-- **B. morphology: comparative and superlative forms have no Degree.** They are separate lemmas, linked from the positive only on the headword line, which the builder ignores. Use that link to set `Degree=Cmp/Sup`.
-- **C. morphology: decide voice for deponent verbs.** Check how the Perseus and UD Latin treebanks tag deponents (the eval gold data), pick one convention, and record it in an ADR.
+- **A. [#29](https://github.com/Edesem/priscianus/issues/29)** Participles, gerundives and supines lack case and tense in one analysis.
+- **B. [#30](https://github.com/Edesem/priscianus/issues/30)** Comparative and superlative forms have no Degree.
+- **C. [#31](https://github.com/Edesem/priscianus/issues/31)** Decide voice for deponent verbs.
 
 ## Limits
 
