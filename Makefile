@@ -44,8 +44,9 @@ clean: ## Remove caches and build output
 	rm -f src/backend/.coverage
 	rm -rf src/frontend/dist
 
-data: ## Download data (not yet implemented)
-	@echo "No data scripts yet (Milestone 1: Wiktextract downloader)."
+data: ## Download raw data into src/data/raw/, then build src/data/morphology.db
+	cd src/backend && uv run python ../data/scripts/download_wiktextract.py
+	cd src/backend && uv run python -m priscianus.morphology.build_index
 
 eval-smoke: ## Run the eval smoke test (not yet implemented)
 	@echo "Eval smoke test arrives in Milestone 3."
