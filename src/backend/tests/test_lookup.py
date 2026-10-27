@@ -39,6 +39,11 @@ SUM = {
     "pos": "verb",
     "forms": [_form("est", "third-person", "singular", "present", "active", "indicative")],
 }
+VITA = {
+    "word": "vita",
+    "pos": "noun",
+    "forms": [_form("vīta", "nominative", "singular")],
+}
 EDO = {
     "word": "edō",
     "pos": "verb",
@@ -48,7 +53,7 @@ EDO = {
 
 @pytest.fixture
 def db(tmp_path: Path) -> Path:
-    entries = [AMOR_NOUN, AMO_VERB, ROSA, SUM, EDO]
+    entries = [AMOR_NOUN, AMO_VERB, ROSA, SUM, EDO, VITA]
     dump = tmp_path / "dump.jsonl"
     dump.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
     path = tmp_path / "morphology.db"
@@ -73,3 +78,36 @@ def test_amor_is_both_a_noun_and_a_passive_verb(db: Path) -> None:
     }
     assert verb.lemma_display == "amō"
     assert isinstance(noun, Analysis)
+
+
+@pytest.mark.parametrize("spelling", ["AMOR", "  amor\n", "ămor", "amōr"])
+def test_normalises_case_whitespace_and_length_marks(db: Path, spelling: str) -> None:
+    assert lookup_form(spelling, db) == lookup_form("amor", db)
+    assert lookup_form(spelling, db) != []
+
+
+@pytest.mark.parametrize("spelling", ["vita", "uita", "VĪTA"])
+def test_normalises_consonantal_v_and_j(db: Path, spelling: str) -> None:
+    assert [a.lemma_display for a in lookup_form(spelling, db)] == ["vita"]
+
+
+@pytest.mark.parametrize("unknown", ["xyzzy", "", "   ", "amorx"])
+def test_unknown_forms_give_an_empty_list(db: Path, unknown: str) -> None:
+    assert lookup_form(unknown, db) == []
+
+
+def test_rosae_has_one_analysis_per_case_reading(db: Path) -> None:
+    analyses = lookup_form("rosae", db)
+
+    assert {(a.lemma, tuple(sorted(a.features.items()))) for a in analyses} == {
+        ("rosa", (("Case", "Gen"), ("Number", "Sing"))),
+        ("rosa", (("Case", "Dat"), ("Number", "Sing"))),
+        ("rosa", (("Case", "Nom"), ("Number", "Plur"))),
+    }
+
+
+def test_est_is_both_sum_and_edo(db: Path) -> None:
+    analyses = lookup_form("est", db)
+
+    assert sorted(a.lemma for a in analyses) == ["edo", "sum"]
+    assert all(a.features["Person"] == "3" and a.features["Tense"] == "Pres" for a in analyses)
