@@ -70,7 +70,20 @@ def test_report_counts_rows_and_skipped_entries(tmp_path: Path) -> None:
     assert report.entries == 3
     assert report.lemmas == 1
     assert report.analyses == 2
-    assert report.skipped == {"no inflected forms": 1, "unknown tag: bogus-tag": 1}
+    assert report.skipped == {"no inflected forms": 2}
+    assert report.skipped_forms == {"unknown tag: bogus-tag": 1}
+
+
+def test_unknown_tag_skips_only_that_form(tmp_path: Path) -> None:
+    entry = {**ROSA, "forms": [*ROSA["forms"], _form("rosīs", "ablative", "bogus-tag")]}  # type: ignore[list-item]
+    db = tmp_path / "morphology.db"
+
+    report = build_index(_write_dump(tmp_path / "dump.jsonl", [entry]), db)
+
+    assert report.lemmas == 1
+    assert report.analyses == 2
+    assert report.skipped == {}
+    assert report.skipped_forms == {"unknown tag: bogus-tag": 1}
 
 
 def test_meta_records_schema_version_dump_date_and_build_hash(tmp_path: Path) -> None:
@@ -105,7 +118,8 @@ def test_build_hash_is_reproducible_and_tracks_the_dump(tmp_path: Path) -> None:
 def test_main_builds_the_db_and_prints_row_counts_and_skips(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    dump = _write_dump(tmp_path / "dump.jsonl", [ROSA, {"word": "rosae", "pos": "noun"}])
+    rosa = {**ROSA, "forms": [*ROSA["forms"], _form("rosīs", "ablative", "bogus-tag")]}  # type: ignore[list-item]
+    dump = _write_dump(tmp_path / "dump.jsonl", [rosa, {"word": "rosae", "pos": "noun"}])
     db = tmp_path / "out" / "morphology.db"
 
     main([str(dump), str(db)])
@@ -116,6 +130,8 @@ def test_main_builds_the_db_and_prints_row_counts_and_skips(
     assert "analyses: 2" in out
     assert "skipped entries: 1" in out
     assert "no inflected forms: 1" in out
+    assert "skipped forms: 1" in out
+    assert "unknown tag: bogus-tag: 1" in out
 
 
 def test_forms_without_tags_are_ignored(tmp_path: Path) -> None:

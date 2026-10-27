@@ -79,6 +79,7 @@ class BuildReport:
     lemmas: int = 0
     analyses: int = 0
     skipped: Counter[str] = field(default_factory=Counter)
+    skipped_forms: Counter[str] = field(default_factory=Counter)
 
 
 def build_index(dump: Path, db: Path) -> BuildReport:
@@ -113,21 +114,20 @@ def _dump_date(dump: Path) -> str:
     return str(json.loads(sidecar.read_text()).get("last_modified", "unknown"))
 
 
-def _readings(entry: dict[str, Any]) -> list[tuple[str, dict[str, str]]]:
+def _readings(entry: dict[str, Any], report: BuildReport) -> list[tuple[str, dict[str, str]]]:
     rows: list[tuple[str, dict[str, str]]] = []
     for form in entry.get("forms", []):
-        rows.extend(
-            (form["form"], reading) for reading in map_tags(form.get("tags", [])) if reading
-        )
+        try:
+            readings = map_tags(form.get("tags", []))
+        except UnknownTagError as err:
+            report.skipped_forms[f"unknown tag: {', '.join(err.tags)}"] += 1
+            continue
+        rows.extend((form["form"], reading) for reading in readings if reading)
     return rows
 
 
 def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildReport) -> None:
-    try:
-        rows = _readings(entry)
-    except UnknownTagError as err:
-        report.skipped[f"unknown tag: {', '.join(err.tags)}"] += 1
-        return
+    rows = _readings(entry, report)
     if not rows:
         report.skipped["no inflected forms"] += 1
         return
@@ -159,6 +159,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(f"analyses: {report.analyses}")
     print(f"skipped entries: {report.skipped.total()}")
     for reason, count in report.skipped.most_common():
+        print(f"  {reason}: {count}")
+    print(f"skipped forms: {report.skipped_forms.total()}")
+    for reason, count in report.skipped_forms.most_common():
         print(f"  {reason}: {count}")
 
 
