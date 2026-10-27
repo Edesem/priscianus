@@ -54,6 +54,12 @@ _COLUMNS: dict[str, str] = {
 _SOURCE = "wiktionary"
 _SCHEMA_VERSION = "1"
 
+_LICENCE = (
+    "Derived from English Wiktionary via Wiktextract (kaikki.org). "
+    "Licensed CC BY-SA 4.0: attribute Wiktionary contributors, and any published copy "
+    "of this database must keep the same licence."
+)
+
 _DATA_DIR = Path(__file__).resolve().parents[3] / "data"
 DEFAULT_DUMP = _DATA_DIR / "raw" / "kaikki.org-dictionary-Latin.jsonl"
 DEFAULT_DB = _DATA_DIR / "morphology.db"
@@ -84,6 +90,7 @@ def build_index(dump: Path, db: Path) -> BuildReport:
             ("schema_version", _SCHEMA_VERSION),
             ("dump_date", _dump_date(dump)),
             ("build_hash", digest.hexdigest()),
+            ("licence", _LICENCE),
         ],
     )
     con.commit()

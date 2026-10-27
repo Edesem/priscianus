@@ -16,3 +16,8 @@ Code is MIT (see `LICENSE`). Data is licensed separately.
 - Fetched by `make data` (`src/data/scripts/download_wiktextract.py`) into `src/data/raw/`; never committed.
 - The upstream file is regenerated periodically, so no checksum is pinned. The script checks the downloaded size against the server's `Content-Length` and that the file ends in a complete JSON line. The upstream `Last-Modified` date is saved beside the dump as `*.meta.json`.
 - Attribution: data from Wiktionary (English Wiktionary contributors, CC BY-SA 4.0 and GFDL), extracted by Wiktextract and distributed via kaikki.org. Cite: Tatu Ylonen, "Wiktextract: Wiktionary as Machine-Readable Structured Data", Proceedings of LREC 2022, pp. 1317-1325.
+
+### Built morphology database
+
+- `make data` builds `src/data/morphology.db` from the Wiktextract dump (`priscianus.morphology.build_index`). The file is gitignored and never committed.
+- It is a derived work of Wiktionary, so any published copy must be licensed CC BY-SA 4.0 and attribute Wiktionary contributors. The same note is stored in the database's `meta` table under `licence`.

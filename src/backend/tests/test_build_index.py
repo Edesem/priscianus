@@ -125,3 +125,13 @@ def test_forms_without_tags_are_ignored(tmp_path: Path) -> None:
     report = build_index(dump, tmp_path / "morphology.db")
 
     assert report.analyses == 2
+
+
+def test_meta_carries_the_cc_by_sa_licence_note(tmp_path: Path) -> None:
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [ROSA]), db)
+
+    meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
+    assert "CC BY-SA 4.0" in meta["licence"]
+    assert "Wiktionary" in meta["licence"]
