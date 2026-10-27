@@ -122,7 +122,6 @@ WORDS = [
     "regere",
     "regamus",
     "regitur",
-    "regi",
     "capit",
     "capiunt",
     "capiebat",

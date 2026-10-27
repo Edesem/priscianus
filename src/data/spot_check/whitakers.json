@@ -471,7 +471,7 @@
    {
     "pos": "N",
     "verb_form": null,
-    "entry": "filius, filii",
+    "entry": "filius, fili",
     "infl": {
      "case": "GEN",
      "number": "P",
@@ -3300,43 +3300,6 @@
      "tense": "PRES",
      "voice": "PASSIVE",
      "mood": "IND"
-    }
-   }
-  ]
- },
- {
-  "word": "regi",
-  "analyses": [
-   {
-    "pos": "V",
-    "verb_form": null,
-    "entry": "rego, regere, rexi, rectus",
-    "infl": {
-     "number": "X",
-     "person": "0",
-     "tense": "PRES",
-     "voice": "PASSIVE",
-     "mood": "INF"
-    }
-   },
-   {
-    "pos": "N",
-    "verb_form": null,
-    "entry": "rex, regis",
-    "infl": {
-     "case": "DAT",
-     "number": "S",
-     "gender": "X"
-    }
-   },
-   {
-    "pos": "N",
-    "verb_form": null,
-    "entry": "rex, regis",
-    "infl": {
-     "case": "LOC",
-     "number": "S",
-     "gender": "X"
     }
    }
   ]
