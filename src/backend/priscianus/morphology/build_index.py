@@ -167,6 +167,18 @@ def _merge_participle_features(con: sqlite3.Connection, participles: dict[int, s
         )
 
 
+def _entry_degree(entry: dict[str, Any]) -> str | None:
+    """Degree of a comparative or superlative lemma, from its sense tags.
+
+    Wiktionary lists these as their own lemmas, so their inflection tables carry no degree.
+    An entry tagged as both is ambiguous and gets none.
+    """
+    tags = {tag for sense in entry.get("senses", []) for tag in sense.get("tags", [])}
+    degrees = {"comparative": "Cmp", "superlative": "Sup"}
+    found = {degree for tag, degree in degrees.items() if tag in tags}
+    return found.pop() if len(found) == 1 else None
+
+
 def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildReport) -> int | None:
     rows = _readings(entry, report)
     if not rows:
@@ -177,7 +189,9 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
         (key_loose(entry["word"]), entry["word"], entry["pos"], _SOURCE),
     )
     report.lemmas += 1
+    degree = _entry_degree(entry)
     for display, reading in rows:
+        reading = {"Degree": degree, **reading} if degree else reading
         values = [reading.get(feature) for feature in _COLUMNS]
         con.execute(
             _INSERT_ANALYSIS,

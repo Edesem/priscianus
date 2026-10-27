@@ -325,3 +325,43 @@ def test_participle_headword_without_macrons_still_links_to_the_verb(tmp_path: P
         .fetchone()
     )
     assert row == ("Past", "Perf", "Pass", "Part")
+
+
+def _degree_adjective(word: str, *sense_tags: str) -> dict[str, object]:
+    return {
+        "word": word,
+        "pos": "adj",
+        "senses": [{"glosses": ["better"], "tags": ["form-of", *sense_tags]}],
+        "forms": [_form(word, "masculine", "nominative", "singular")],
+    }
+
+
+@pytest.mark.parametrize(("sense_tag", "degree"), [("comparative", "Cmp"), ("superlative", "Sup")])
+def test_degree_lemma_analyses_get_degree_from_sense_tag(
+    tmp_path: Path, sense_tag: str, degree: str
+) -> None:
+    db = tmp_path / "morphology.db"
+    dump = _write_dump(tmp_path / "dump.jsonl", [_degree_adjective("melior", sense_tag)])
+
+    build_index(dump, db)
+
+    row = sqlite3.connect(db).execute("SELECT degree FROM analyses").fetchone()
+    assert row == (degree,)
+
+
+def test_positive_adjective_has_no_degree(tmp_path: Path) -> None:
+    db = tmp_path / "morphology.db"
+    dump = _write_dump(tmp_path / "dump.jsonl", [_degree_adjective("bonus", "declension-2")])
+
+    build_index(dump, db)
+
+    assert sqlite3.connect(db).execute("SELECT degree FROM analyses").fetchone() == (None,)
+
+
+def test_entry_tagged_both_comparative_and_superlative_is_left_unmarked(tmp_path: Path) -> None:
+    db = tmp_path / "morphology.db"
+    both = _degree_adjective("xyz", "comparative", "superlative")
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [both]), db)
+
+    assert sqlite3.connect(db).execute("SELECT degree FROM analyses").fetchone() == (None,)
