@@ -54,9 +54,22 @@ NULLUS = {
 }
 
 
+# Homographs: only the length marks tell them apart.
+MALUM_APPLE = {
+    "word": "mālum",
+    "pos": "noun",
+    "forms": [_form("mālī", "genitive", "singular")],
+}
+MALUM_EVIL = {
+    "word": "malum",
+    "pos": "noun",
+    "forms": [_form("malī", "genitive", "singular")],
+}
+
+
 @pytest.fixture
 def db(tmp_path: Path) -> Path:
-    entries = [ROSA, AMO, AMOR, FORS, FERO, NULLUS]
+    entries = [ROSA, AMO, AMOR, FORS, FERO, NULLUS, MALUM_APPLE, MALUM_EVIL]
     dump = tmp_path / "dump.jsonl"
     dump.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
     path = tmp_path / "morphology.db"
@@ -101,14 +114,21 @@ def test_every_spelling_of_a_slot_is_returned(db: Path) -> None:
     assert sorted(forms) == ["nullius", "nullīus"]
 
 
-def test_amor_noun_and_verb_do_not_mix(db: Path) -> None:
+def test_a_lemma_only_returns_its_own_forms(db: Path) -> None:
     assert inflect("amor", {"Case": "Nom"}, db=db) == ["amor"]
     with pytest.raises(NoSuchFormError):
         inflect("amor", {"Person": "1"}, db=db)
 
 
+def test_macrons_in_the_lemma_pick_between_homographs(db: Path) -> None:
+    gen_sing = {"Case": "Gen", "Number": "Sing"}
+
+    assert inflect("mālum", gen_sing, db=db) == ["mālī"]
+    assert inflect("malum", gen_sing, db=db) == ["mālī", "malī"]
+
+
 def test_round_trip_inflect_reproduces_every_indexed_form(db: Path) -> None:
-    for entry in [ROSA, AMO, AMOR, NULLUS]:
+    for entry in [ROSA, AMO, AMOR, NULLUS, MALUM_APPLE, MALUM_EVIL]:
         for table_form in entry["forms"]:
             assert isinstance(table_form, dict)
             display = table_form["form"]

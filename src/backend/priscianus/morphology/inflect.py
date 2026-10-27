@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from priscianus.morphology.build_index import _COLUMNS, DEFAULT_DB
-from priscianus.morphology.normaliser import key_loose
+from priscianus.morphology.normaliser import key_loose, key_macron
 
 
 class NoSuchFormError(LookupError):
@@ -19,7 +19,8 @@ def inflect(
 ) -> list[str]:
     """Return every indexed spelling of `lemma` that has all of `features`.
 
-    `pos` narrows the search when several lemmas share a spelling.
+    `pos` narrows the search when several lemmas share a spelling. So do length
+    marks in `lemma`: "mālum" excludes "malum", while an unmarked "malum" matches both.
     Raises NoSuchFormError if nothing matches, e.g. the vocative of a verb.
     """
     unknown = [f for f in features if f not in _COLUMNS]
@@ -27,7 +28,8 @@ def inflect(
         raise ValueError(f"Unknown UD feature(s): {', '.join(unknown)}")
 
     query = (
-        "SELECT DISTINCT a.form_display FROM analyses a JOIN lemmas l ON l.id = a.lemma_id"
+        "SELECT DISTINCT l.lemma_display, a.form_display"
+        " FROM analyses a JOIN lemmas l ON l.id = a.lemma_id"
         " WHERE l.lemma = ?"
     )
     params: list[str] = [key_loose(lemma)]
@@ -38,10 +40,17 @@ def inflect(
         query += f' AND a."{_COLUMNS[feature]}" = ?'
         params.append(value)
     query += " ORDER BY a.id"
+    marked = key_macron(lemma) != key_loose(lemma)
 
     con = sqlite3.connect(db)
     try:
-        forms = [display for (display,) in con.execute(query, params)]
+        forms = list(
+            dict.fromkeys(
+                form
+                for lemma_display, form in con.execute(query, params)
+                if not marked or key_macron(lemma_display) == key_macron(lemma)
+            )
+        )
     finally:
         con.close()
     if not forms:
