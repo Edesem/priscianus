@@ -24,6 +24,23 @@ make lint
 
 Run `make` on its own to list every command.
 
+## Morphology demo
+
+Build the index once with `make data`, then parse any Latin word:
+
+```sh
+cd src/backend
+uv run python -m priscianus.morphology parse amor
+```
+
+```
+amor: 2 analyses
+  amor: form of amor (noun): Case=Nom, Number=Sing
+  amor: form of amō (verb): Person=1, Number=Sing, Tense=Pres, Mood=Ind, Voice=Pass, VerbForm=Fin
+```
+
+Unknown words print `No analyses found for '<word>'.` to stderr and exit with status 1.
+
 ## Results
 
 | Mode | Model | Accuracy | Cost / request |
