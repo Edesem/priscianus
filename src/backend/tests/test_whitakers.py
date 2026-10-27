@@ -1,6 +1,10 @@
+import json
+from pathlib import Path
+
 import pytest
 
-from priscianus.morphology.whitakers import whitakers_to_ud
+from priscianus.morphology.build_index import build_index
+from priscianus.morphology.whitakers import compare, whitakers_to_ud
 
 
 def test_noun_ending_maps_case_and_number_and_drops_unspecified_gender():
@@ -72,3 +76,50 @@ def test_placeholder_codes_are_dropped():
 def test_unknown_code_raises():
     with pytest.raises(ValueError, match="TENSE"):
         whitakers_to_ud({"tense": "NOPE"})
+
+
+def _form(form: str, *tags: str) -> dict[str, object]:
+    return {"form": form, "tags": list(tags), "source": "declension"}
+
+
+@pytest.fixture
+def db(tmp_path: Path) -> Path:
+    entries = [
+        {
+            "word": "rosa",
+            "pos": "noun",
+            "forms": [
+                _form("rosae", "genitive", "singular"),
+                _form("rosae", "nominative", "plural"),
+            ],
+        }
+    ]
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
+    path = tmp_path / "morphology.db"
+    build_index(dump, path)
+    return path
+
+
+def test_compare_agrees_when_every_whitakers_analysis_is_in_the_index(db: Path):
+    expected = [{"Case": "Gen", "Number": "Sing"}, {"Case": "Nom", "Number": "Plur"}]
+    result = compare("rosae", expected, db)
+    assert result.status == "agree"
+    assert result.unmatched == []
+
+
+def test_compare_ignores_extra_features_the_index_has(db: Path):
+    assert compare("rosae", [{"Case": "Gen"}], db).status == "agree"
+
+
+def test_compare_reports_a_form_the_index_lacks(db: Path):
+    result = compare("rosarum", [{"Case": "Gen", "Number": "Plur"}], db)
+    assert result.status == "missing"
+    assert result.found == []
+
+
+def test_compare_reports_analyses_the_index_does_not_have(db: Path):
+    expected = [{"Case": "Gen", "Number": "Sing"}, {"Case": "Dat", "Number": "Sing"}]
+    result = compare("rosae", expected, db)
+    assert result.status == "differ"
+    assert result.unmatched == [{"Case": "Dat", "Number": "Sing"}]
