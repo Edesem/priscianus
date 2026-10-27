@@ -164,3 +164,20 @@ def test_spot_check_passes_verb_form_of_participles_and_supines(db: Path, tmp_pa
     )
     (result,) = spot_check(fixture, db)
     assert result.unmatched == [{"VerbForm": "Part"}]
+
+
+def test_spot_check_does_not_require_noun_gender_or_positive_degree(db: Path, tmp_path: Path):
+    fixture = _write_fixture(
+        tmp_path / "whitakers.json",
+        [
+            {
+                "word": "rosae",
+                "analyses": [
+                    {"pos": "N", "verb_form": None, "infl": {"case": "GEN", "gender": "F"}},
+                    {"pos": "ADJ", "verb_form": None, "infl": {"case": "GEN", "comparison": "POS"}},
+                ],
+            }
+        ],
+    )
+    (result,) = spot_check(fixture, db)
+    assert result.status == "agree"

@@ -5,7 +5,7 @@ import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from priscianus.morphology.build_index import DEFAULT_DB
 from priscianus.morphology.lookup import Analysis, lookup_form
@@ -104,6 +104,20 @@ def compare(word: str, expected: list[dict[str, str]], db: Path = DEFAULT_DB) ->
 DEFAULT_FIXTURE = DEFAULT_DB.parent / "spot_check" / "whitakers.json"
 
 
+def _expected_features(analysis: dict[str, Any]) -> dict[str, str]:
+    """Whitaker's features for one analysis, minus what the index never records.
+
+    Wiktionary tables give noun forms no gender (it belongs to the lemma) and
+    leave positive adjectives without a degree, so neither can disagree.
+    """
+    features = whitakers_to_ud(analysis["infl"], verb_form=analysis["verb_form"])
+    if analysis["pos"] == "N":
+        features.pop("Gender", None)
+    if features.get("Degree") == "Pos":
+        del features["Degree"]
+    return features
+
+
 def spot_check(fixture: Path = DEFAULT_FIXTURE, db: Path = DEFAULT_DB) -> list[Comparison]:
     """Compare every word in a Whitaker's fixture with the index.
 
@@ -113,7 +127,7 @@ def spot_check(fixture: Path = DEFAULT_FIXTURE, db: Path = DEFAULT_DB) -> list[C
     for entry in json.loads(fixture.read_text()):
         if not entry["analyses"]:
             continue
-        expected = [whitakers_to_ud(a["infl"], verb_form=a["verb_form"]) for a in entry["analyses"]]
+        expected = [_expected_features(a) for a in entry["analyses"]]
         results.append(compare(entry["word"], expected, db))
     return results
 
