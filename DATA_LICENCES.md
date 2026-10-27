@@ -5,6 +5,7 @@ Code is MIT (see `LICENSE`). Data is licensed separately.
 | Source | Use | Licence | Notes |
 |---|---|---|---|
 | Wiktionary via Wiktextract / kaikki.org | Morphology index | CC BY-SA 4.0 (+ GFDL) | Attribute; a published built database must also be CC BY-SA. |
+| Whitaker's Words (via PyWORDS) | Spot-check fixture | Free for any use (author's licence) | Only recorded analyses of 144 forms are committed, in `src/data/spot_check/whitakers.json`. |
 | Perseus Latin treebank | Evals | See upstream | Downloaded by script, not committed. |
 | Universal Dependencies Latin treebanks | Evals | Some CC BY-NC-SA | Non-commercial. Never commit; download by script; keep out of paid offerings. |
 
