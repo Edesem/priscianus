@@ -1,6 +1,8 @@
 """Map Whitaker's Words inflection codes to Universal Dependencies features and
 compare Whitaker's analyses of a form with the morphology index."""
 
+import json
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -97,3 +99,36 @@ def compare(word: str, expected: list[dict[str, str]], db: Path = DEFAULT_DB) ->
         if not any(features.items() <= analysis.features.items() for analysis in found)
     ]
     return Comparison(word, "differ" if unmatched else "agree", found, unmatched)
+
+
+DEFAULT_FIXTURE = DEFAULT_DB.parent / "spot_check" / "whitakers.json"
+
+
+def spot_check(fixture: Path = DEFAULT_FIXTURE, db: Path = DEFAULT_DB) -> list[Comparison]:
+    """Compare every word in a Whitaker's fixture with the index.
+
+    Words Whitaker's could not analyse are skipped: there is nothing to compare.
+    """
+    results = []
+    for entry in json.loads(fixture.read_text()):
+        if not entry["analyses"]:
+            continue
+        expected = [whitakers_to_ud(a["infl"], verb_form=a["verb_form"]) for a in entry["analyses"]]
+        results.append(compare(entry["word"], expected, db))
+    return results
+
+
+def main() -> None:
+    """Print each word where the index and Whitaker's disagree."""
+    results = spot_check()
+    for r in results:
+        if r.status != "agree":
+            print(f"{r.status:8} {r.word}: Whitaker's {r.unmatched}")
+            for a in r.found:
+                print(f"           index: {a.lemma_display} {a.pos} {a.features}")
+    agreed = sum(r.status == "agree" for r in results)
+    print(f"{agreed}/{len(results)} words agree", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()

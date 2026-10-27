@@ -1,0 +1,4306 @@
+[
+ {
+  "word": "puellae",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puella, puellae",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puella, puellae",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puella, puellae",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puella, puellae",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puella, puellae",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "rosarum",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "rodo, rodere, rosi, rosus",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "F",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rosa, rosae",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "aquam",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "aqua, aquae",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "poeta",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "poeta, poetae",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "poeta, poetae",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "poeta, poetae",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "dominus",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dominus, domini",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "domini",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dominus, domini",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dominus, domini",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dominus, domini",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dominus, domini",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "servo",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "servo, servare, servavi, servatus",
+    "infl": {
+     "number": "S",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "servus, servi",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "servus, servi",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "bellum",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bellum, belli",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bellum, belli",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bellum, belli",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "bella",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "bello, bellare, bellavi, bellatus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bellum, belli",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bellum, belli",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bellum, belli",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bellus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "pueri",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puer, pueri",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puer, pueri",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puer, pueri",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "puer, pueri",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "filiorum",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "filius, filii",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "deo",
+  "analyses": []
+ },
+ {
+  "word": "regum",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regis",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regi",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "INF"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "rege",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "civitatem",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "civitas, civitatis",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "nomina",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "nomen, nominis",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "nomen, nominis",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "nomen, nominis",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "nomino, nominare, nominavi, nominatus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IMP"
+    }
+   }
+  ]
+ },
+ {
+  "word": "corporis",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "corpus, corporis",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "patris",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "pater, patris",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "nomine",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "nomen, nominis",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "nomen, nominis",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "mare",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "mas",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mas, maris",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mas, maris",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "maria",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "mare, maris",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "mas",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "mas",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "mas",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "urbium",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "urbs, urbis",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "manus",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "manui",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "manus, manus",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "exercitum",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "exerceo, exercere, exercui, exercitus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "exerceo, exercere, exercui, exercitus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "SUPINE",
+    "verb_form": "Sup",
+    "entry": "exerceo, exercere, exercui, exercitus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "exerceo, exercere, exercui, exercitus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "exerceo, exercere, exercui, exercitus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "exercitus, exercitus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fructus",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fructus, fructus",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fructus, fructus",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fructus, fructus",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fructus, fructus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fructus, fructus",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fructus, fructus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "cornua",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "cornu, cornus",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "cornu, cornus",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "cornu, cornus",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N"
+    }
+   }
+  ]
+ },
+ {
+  "word": "diei",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dies, diei",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "dies, diei",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "rem",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "res, rei",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "rebus",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "res, rei",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "res, rei",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fidem",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fides, fidei",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fides, fidis",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fidis, fidis",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "speciem",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "species, speciei",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "bonus",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonus, boni",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "bonae",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bona, bonae",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bona, bonae",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bona, bonae",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bona, bonae",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bona, bonae",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "bonorum",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonum, boni",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonus, boni",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "bono",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonum, boni",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonum, boni",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonus, boni",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "bonus, boni",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "magnam",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "magna",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "magnus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "melior",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C",
+     "comparison": "COMP"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C",
+     "comparison": "COMP"
+    }
+   }
+  ]
+ },
+ {
+  "word": "meliorem",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C",
+     "comparison": "COMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "melioro, meliorare, melioratus",
+    "infl": {
+     "number": "S",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "SUB"
+    }
+   }
+  ]
+ },
+ {
+  "word": "optimus",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "bonus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "M",
+     "comparison": "SUPER"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fortis",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fors, fortis",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fors, fortis",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fortem",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fors, fortis",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fortibus",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fors, fortis",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fors, fortis",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "fors, fortis",
+    "infl": {
+     "case": "LOC",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "fortis -is -e",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "omnia",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "omne, omnis",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "omne, omnis",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "omne, omnis",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "omnis -is -e",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "omnis -is -e",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "omnis -is -e",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "omnium",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "omne, omnis",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "omnis -is -e",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "omnis, omnis",
+    "infl": {
+     "case": "GEN",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "acris",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "acer acris acre",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "acer acris acre",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "acer acris acre",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "acer acris acre",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "F",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "acra, acrae",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "acra, acrae",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "acra, acrae",
+    "infl": {
+     "case": "LOC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "acrum, acri",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "acrum, acri",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "acrum, acri",
+    "infl": {
+     "case": "LOC",
+     "number": "P",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "pulchriorem",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "pulcher pulchra pulchrum",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C",
+     "comparison": "COMP"
+    }
+   }
+  ]
+ },
+ {
+  "word": "ingentes",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "ingens",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "ingens",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "ingens",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "felix",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "felix",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "felix",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "felix",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "felicis",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "felix",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "felix",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "ego",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "ego, mei",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "mihi",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "ego, mei",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "nos",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "tibi",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "tu, tui",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "eius",
+  "analyses": []
+ },
+ {
+  "word": "hic",
+  "analyses": []
+ },
+ {
+  "word": "illa",
+  "analyses": []
+ },
+ {
+  "word": "quod",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "quod, -jus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "quod, -jus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N"
+    }
+   }
+  ]
+ },
+ {
+  "word": "eum",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "is, eius",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M"
+    }
+   }
+  ]
+ },
+ {
+  "word": "illi",
+  "analyses": []
+ },
+ {
+  "word": "hoc",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "hic, huius",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "hic, huius",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N"
+    }
+   }
+  ]
+ },
+ {
+  "word": "quem",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "qu, cujus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M"
+    }
+   }
+  ]
+ },
+ {
+  "word": "sibi",
+  "analyses": [
+   {
+    "pos": "PRON",
+    "verb_form": null,
+    "entry": "",
+    "infl": {
+     "case": "DAT",
+     "number": "X",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amo",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amas",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "ama, amae",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amamus",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "P",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amabat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amavit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amabo",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "1",
+     "tense": "FUT",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amaret",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "SUB"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amare",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amarus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amari",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "amarum, amari",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "amarum, amari",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amarus -a -um",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amarus -a -um",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amarus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amarus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amatus",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amatus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amantem",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amans",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "amans, amantis",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C",
+     "tense": "PRES",
+     "voice": "ACTIVE"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amandi",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "M",
+     "tense": "FUT",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "N",
+     "tense": "FUT",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "M",
+     "tense": "FUT",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "M",
+     "tense": "FUT",
+     "voice": "PASSIVE"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amatum",
+  "analyses": [
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amatus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amatus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amatus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "amatus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "SUPINE",
+    "verb_form": "Sup",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   }
+  ]
+ },
+ {
+  "word": "ama",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "ama, amae",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "ama, amae",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "ama, amae",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IMP"
+    }
+   }
+  ]
+ },
+ {
+  "word": "laudaverunt",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "laudo, laudare, laudavi, laudatus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "laudavisse",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "laudo, laudare, laudavi, laudatus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "laudabimus",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "laudo, laudare, laudavi, laudatus",
+    "infl": {
+     "number": "P",
+     "person": "1",
+     "tense": "FUT",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "laudemus",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "laudo, laudare, laudavi, laudatus",
+    "infl": {
+     "number": "P",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "SUB"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monet",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monebant",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monuit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monere",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monete",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "P",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IMP"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monitus",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "monitus, monitus",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "monitus, monitus",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "monitus, monitus",
+    "infl": {
+     "case": "NOM",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "monitus, monitus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "monitus, monitus",
+    "infl": {
+     "case": "VOC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "monitus, monitus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regunt",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regebat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "rexit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "reget",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "FUT",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regere",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "regero, regerere, regessi, regestus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "FUT",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regamus",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "P",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "SUB"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regitur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regi",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "INF"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "DAT",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "rex, regis",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "capit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "capiunt",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "capiebat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "cepit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "capere",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "capiet",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "capio, capere, cepi, captus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "FUT",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "audit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "audiunt",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "audiebat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "audivit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "audire",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "audiat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "SUB"
+    }
+   }
+  ]
+ },
+ {
+  "word": "auditum",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "SUPINE",
+    "verb_form": "Sup",
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "auditus, auditus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "C"
+    }
+   }
+  ]
+ },
+ {
+  "word": "sum",
+  "analyses": []
+ },
+ {
+  "word": "es",
+  "analyses": []
+ },
+ {
+  "word": "est",
+  "analyses": []
+ },
+ {
+  "word": "sunt",
+  "analyses": []
+ },
+ {
+  "word": "erat",
+  "analyses": []
+ },
+ {
+  "word": "fuit",
+  "analyses": []
+ },
+ {
+  "word": "esse",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "edo, edere, edi, essus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   }
+  ]
+ },
+ {
+  "word": "eris",
+  "analyses": [
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "era, erae",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "era, erae",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "era, erae",
+    "infl": {
+     "case": "LOC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "eris, eris",
+    "infl": {
+     "case": "ACC",
+     "number": "P",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "eris, eris",
+    "infl": {
+     "case": "GEN",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "eris, eris",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "eris, eris",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "erus, eri",
+    "infl": {
+     "case": "ABL",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "erus, eri",
+    "infl": {
+     "case": "DAT",
+     "number": "P",
+     "gender": "X"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "erus, eri",
+    "infl": {
+     "case": "LOC",
+     "number": "P",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fuerat",
+  "analyses": []
+ },
+ {
+  "word": "possum",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "possum, posse, potui",
+    "infl": {
+     "number": "S",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "potest",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "possum, posse, potui",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "it",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "eo, ire, ivi, itus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "ire",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "eo, ire, ivi, itus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "eo, ire, ivi, itus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "iris, iris",
+    "infl": {
+     "case": "ABL",
+     "number": "S",
+     "gender": "C"
+    }
+   },
+   {
+    "pos": "N",
+    "verb_form": null,
+    "entry": "iris, iris",
+    "infl": {
+     "case": "LOC",
+     "number": "S",
+     "gender": "X"
+    }
+   }
+  ]
+ },
+ {
+  "word": "ibat",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "eo, ire, ivi, itus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "fert",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "ferre",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "number": "S",
+     "person": "2",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IMP"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "number": "X",
+     "person": "0",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "INF"
+    }
+   }
+  ]
+ },
+ {
+  "word": "tulit",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PERF",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "latum",
+  "analyses": [
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "SUPINE",
+    "verb_form": "Sup",
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "VPAR",
+    "verb_form": "Part",
+    "entry": "fero, ferre, tuli, latus",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "tense": "PERF",
+     "voice": "PASSIVE"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "latus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "M",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "latus -a -um",
+    "infl": {
+     "case": "ACC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "latus -a -um",
+    "infl": {
+     "case": "NOM",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   },
+   {
+    "pos": "ADJ",
+    "verb_form": null,
+    "entry": "latus -a -um",
+    "infl": {
+     "case": "VOC",
+     "number": "S",
+     "gender": "N",
+     "comparison": "POS"
+    }
+   }
+  ]
+ },
+ {
+  "word": "vult",
+  "analyses": []
+ },
+ {
+  "word": "volumus",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "volo, velle, volui",
+    "infl": {
+     "number": "P",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "nolo",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "nolo, nolle, nolui",
+    "infl": {
+     "number": "S",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "ACTIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "loquitur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "loquor, loqui, locutus sum",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "locutus",
+  "analyses": []
+ },
+ {
+  "word": "sequuntur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "sequor, sequi, secutus sum",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "hortamur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "hortor, hortari, hortatus sum",
+    "infl": {
+     "number": "P",
+     "person": "1",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "moritur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "morior, mori, mortuus sum",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   },
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "morior, moriri, moritus sum",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "utitur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "utor, uti, usus sum",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amatur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "monetur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "moneo, monere, monui, monitus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "amabantur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "amo, amare, amavi, amatus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "regebantur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "rego, regere, rexi, rectus",
+    "infl": {
+     "number": "P",
+     "person": "3",
+     "tense": "IMPF",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ },
+ {
+  "word": "auditur",
+  "analyses": [
+   {
+    "pos": "V",
+    "verb_form": null,
+    "entry": "audio, audire, audivi, auditus",
+    "infl": {
+     "number": "S",
+     "person": "3",
+     "tense": "PRES",
+     "voice": "PASSIVE",
+     "mood": "IND"
+    }
+   }
+  ]
+ }
+]

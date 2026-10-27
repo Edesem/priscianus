@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from priscianus.morphology.build_index import build_index
-from priscianus.morphology.whitakers import compare, whitakers_to_ud
+from priscianus.morphology.whitakers import compare, spot_check, whitakers_to_ud
 
 
 def test_noun_ending_maps_case_and_number_and_drops_unspecified_gender():
@@ -123,3 +123,44 @@ def test_compare_reports_analyses_the_index_does_not_have(db: Path):
     result = compare("rosae", expected, db)
     assert result.status == "differ"
     assert result.unmatched == [{"Case": "Dat", "Number": "Sing"}]
+
+
+def _write_fixture(path: Path, entries: list[dict[str, object]]) -> Path:
+    path.write_text(json.dumps(entries))
+    return path
+
+
+def test_spot_check_maps_codes_and_compares_each_word(db: Path, tmp_path: Path):
+    fixture = _write_fixture(
+        tmp_path / "whitakers.json",
+        [
+            {
+                "word": "rosae",
+                "analyses": [
+                    {"pos": "N", "verb_form": None, "infl": {"case": "GEN", "number": "S"}},
+                    {"pos": "N", "verb_form": None, "infl": {"case": "DAT", "number": "S"}},
+                ],
+            },
+            {
+                "word": "rosarum",
+                "analyses": [{"pos": "N", "verb_form": None, "infl": {"case": "GEN"}}],
+            },
+        ],
+    )
+    results = spot_check(fixture, db)
+    assert [(r.word, r.status) for r in results] == [("rosae", "differ"), ("rosarum", "missing")]
+    assert results[0].unmatched == [{"Case": "Dat", "Number": "Sing"}]
+
+
+def test_spot_check_skips_words_whitakers_could_not_analyse(db: Path, tmp_path: Path):
+    fixture = _write_fixture(tmp_path / "whitakers.json", [{"word": "est", "analyses": []}])
+    assert spot_check(fixture, db) == []
+
+
+def test_spot_check_passes_verb_form_of_participles_and_supines(db: Path, tmp_path: Path):
+    fixture = _write_fixture(
+        tmp_path / "whitakers.json",
+        [{"word": "rosae", "analyses": [{"pos": "VPAR", "verb_form": "Part", "infl": {}}]}],
+    )
+    (result,) = spot_check(fixture, db)
+    assert result.unmatched == [{"VerbForm": "Part"}]
