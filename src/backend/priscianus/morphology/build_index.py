@@ -30,7 +30,7 @@ CREATE TABLE analyses (
     form_display TEXT NOT NULL,
     key_loose TEXT NOT NULL,
     key_macron TEXT NOT NULL,
-    "case" TEXT, number TEXT, gender TEXT, person TEXT, tense TEXT,
+    "case" TEXT, number TEXT, gender TEXT, person TEXT, tense TEXT, aspect TEXT,
     mood TEXT, voice TEXT, verb_form TEXT, degree TEXT,
     source TEXT NOT NULL
 );
@@ -45,11 +45,19 @@ _COLUMNS: dict[str, str] = {
     "Gender": "gender",
     "Person": "person",
     "Tense": "tense",
+    "Aspect": "aspect",
     "Mood": "mood",
     "Voice": "voice",
     "VerbForm": "verb_form",
     "Degree": "degree",
 }
+
+_ANALYSIS_COLUMNS = ["lemma_id", "form_display", "key_loose", "key_macron"]
+_ANALYSIS_COLUMNS += [f'"{column}"' for column in _COLUMNS.values()] + ["source"]
+_INSERT_ANALYSIS = (
+    f"INSERT INTO analyses ({', '.join(_ANALYSIS_COLUMNS)})"
+    f" VALUES ({', '.join('?' * len(_ANALYSIS_COLUMNS))})"
+)
 
 _SOURCE = "wiktionary"
 _SCHEMA_VERSION = "1"
@@ -131,9 +139,7 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
     for display, reading in rows:
         values = [reading.get(feature) for feature in _COLUMNS]
         con.execute(
-            'INSERT INTO analyses (lemma_id, form_display, key_loose, key_macron, "case", number,'
-            " gender, person, tense, mood, voice, verb_form, degree, source)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            _INSERT_ANALYSIS,
             (cur.lastrowid, display, key_loose(display), key_macron(display), *values, _SOURCE),
         )
         report.analyses += 1

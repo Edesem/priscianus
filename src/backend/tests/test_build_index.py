@@ -135,3 +135,64 @@ def test_meta_carries_the_cc_by_sa_licence_note(tmp_path: Path) -> None:
     meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
     assert "CC BY-SA 4.0" in meta["licence"]
     assert "Wiktionary" in meta["licence"]
+
+
+def test_aspect_keeps_imperfect_perfect_and_future_perfect_distinct(tmp_path: Path) -> None:
+    amo = {
+        "word": "amō",
+        "pos": "verb",
+        "forms": [
+            _form(
+                "amābat",
+                "third-person",
+                "singular",
+                "imperfect",
+                "indicative",
+                "active",
+                source="conjugation",
+            ),
+            _form(
+                "amāvit",
+                "third-person",
+                "singular",
+                "perfect",
+                "indicative",
+                "active",
+                source="conjugation",
+            ),
+            _form(
+                "amābit",
+                "third-person",
+                "singular",
+                "future",
+                "indicative",
+                "active",
+                source="conjugation",
+            ),
+            _form(
+                "amāverit",
+                "third-person",
+                "singular",
+                "future",
+                "perfect",
+                "indicative",
+                "active",
+                source="conjugation",
+            ),
+        ],
+    }
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [amo]), db)
+
+    rows = (
+        sqlite3.connect(db)
+        .execute("SELECT form_display, tense, aspect FROM analyses ORDER BY form_display")
+        .fetchall()
+    )
+    assert rows == [
+        ("amābat", "Past", "Imp"),
+        ("amābit", "Fut", None),
+        ("amāverit", "Fut", "Perf"),
+        ("amāvit", "Past", "Perf"),
+    ]
