@@ -2,7 +2,9 @@ import json
 import sqlite3
 from pathlib import Path
 
-from priscianus.morphology.build_index import build_index
+import pytest
+
+from priscianus.morphology.build_index import build_index, main
 
 
 def _form(form: str, *tags: str, source: str = "declension") -> dict[str, object]:
@@ -98,3 +100,28 @@ def test_build_hash_is_reproducible_and_tracks_the_dump(tmp_path: Path) -> None:
 
     assert build_hash("a", [ROSA]) == build_hash("b", [ROSA])
     assert build_hash("a", [ROSA]) != build_hash("c", [ROSA, ROSA])
+
+
+def test_main_builds_the_db_and_prints_row_counts_and_skips(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    dump = _write_dump(tmp_path / "dump.jsonl", [ROSA, {"word": "rosae", "pos": "noun"}])
+    db = tmp_path / "out" / "morphology.db"
+
+    main([str(dump), str(db)])
+
+    out = capsys.readouterr().out
+    assert db.exists()
+    assert "lemmas: 1" in out
+    assert "analyses: 2" in out
+    assert "skipped entries: 1" in out
+    assert "no inflected forms: 1" in out
+
+
+def test_forms_without_tags_are_ignored(tmp_path: Path) -> None:
+    entry = {"word": "rosa", "pos": "noun", "forms": [{"form": "rosa"}, *ROSA["forms"]]}  # type: ignore[list-item]
+    dump = _write_dump(tmp_path / "dump.jsonl", [entry])
+
+    report = build_index(dump, tmp_path / "morphology.db")
+
+    assert report.analyses == 2

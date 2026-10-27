@@ -1,9 +1,11 @@
 """Build the SQLite morphology index from the Wiktextract Latin dump."""
 
+import argparse
 import hashlib
 import json
 import sqlite3
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -52,6 +54,10 @@ _COLUMNS: dict[str, str] = {
 _SOURCE = "wiktionary"
 _SCHEMA_VERSION = "1"
 
+_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+DEFAULT_DUMP = _DATA_DIR / "raw" / "kaikki.org-dictionary-Latin.jsonl"
+DEFAULT_DB = _DATA_DIR / "morphology.db"
+
 
 @dataclass
 class BuildReport:
@@ -95,7 +101,9 @@ def _dump_date(dump: Path) -> str:
 def _readings(entry: dict[str, Any]) -> list[tuple[str, dict[str, str]]]:
     rows: list[tuple[str, dict[str, str]]] = []
     for form in entry.get("forms", []):
-        rows.extend((form["form"], reading) for reading in map_tags(form["tags"]) if reading)
+        rows.extend(
+            (form["form"], reading) for reading in map_tags(form.get("tags", [])) if reading
+        )
     return rows
 
 
@@ -122,3 +130,24 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
             (cur.lastrowid, display, key_loose(display), key_macron(display), *values, _SOURCE),
         )
         report.analyses += 1
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("dump", nargs="?", type=Path, default=DEFAULT_DUMP)
+    parser.add_argument("db", nargs="?", type=Path, default=DEFAULT_DB)
+    args = parser.parse_args(argv)
+
+    args.db.parent.mkdir(parents=True, exist_ok=True)
+    report = build_index(args.dump, args.db)
+    print(f"Built {args.db}")
+    print(f"entries: {report.entries}")
+    print(f"lemmas: {report.lemmas}")
+    print(f"analyses: {report.analyses}")
+    print(f"skipped entries: {report.skipped.total()}")
+    for reason, count in report.skipped.most_common():
+        print(f"  {reason}: {count}")
+
+
+if __name__ == "__main__":
+    main()
