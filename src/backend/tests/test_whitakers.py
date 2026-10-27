@@ -181,3 +181,42 @@ def test_spot_check_does_not_require_noun_gender_or_positive_degree(db: Path, tm
     )
     (result,) = spot_check(fixture, db)
     assert result.status == "agree"
+
+
+def _verb_db(tmp_path: Path, lemma: str, form: str) -> Path:
+    entry = {
+        "word": lemma,
+        "pos": "verb",
+        "forms": [
+            {
+                "form": form,
+                "tags": ["active", "indicative", "present", "singular", "third-person"],
+                "source": "conjugation",
+            }
+        ],
+    }
+    dump = tmp_path / "verb.jsonl"
+    dump.write_text(json.dumps(entry, ensure_ascii=False) + "\n")
+    path = tmp_path / "verb.db"
+    build_index(dump, path)
+    return path
+
+
+def _passive_verb_fixture(tmp_path: Path, word: str, entry: str) -> Path:
+    infl = {"number": "S", "person": "3", "tense": "PRES", "voice": "PASSIVE", "mood": "IND"}
+    analysis = {"pos": "V", "verb_form": None, "entry": entry, "infl": infl}
+    return _write_fixture(tmp_path / "whitakers.json", [{"word": word, "analyses": [analysis]}])
+
+
+def test_spot_check_accepts_active_for_whitakers_passive_on_a_deponent(tmp_path: Path):
+    db = _verb_db(tmp_path, "loquor", "loquitur")
+    fixture = _passive_verb_fixture(tmp_path, "loquitur", "loquor, loqui, locutus sum")
+    (result,) = spot_check(fixture, db)
+    assert result.status == "agree"
+
+
+def test_spot_check_still_requires_passive_voice_on_a_regular_verb(tmp_path: Path):
+    db = _verb_db(tmp_path, "amo", "amatur")
+    fixture = _passive_verb_fixture(tmp_path, "amatur", "amo, amare, amavi, amatus")
+    (result,) = spot_check(fixture, db)
+    assert result.status == "differ"
