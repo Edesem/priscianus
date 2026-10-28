@@ -174,3 +174,81 @@ def test_tool_use_blocks_survive_the_cache(tmp_path):
     assert cached.stop_reason == "tool_use"
     assert cached.content[0]["name"] == "lookup"
     assert cached.content[0]["input"] == {"form": "amat"}
+
+
+def _status_error(cls, status):
+    import httpx
+
+    req = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    return cls("err", response=httpx.Response(status, request=req), body=None)
+
+
+def test_rate_limit_is_retried_with_exponential_backoff(tmp_path):
+    import anthropic
+
+    err = _status_error(anthropic.RateLimitError, 429)
+    fake = FakeAnthropic(err, err, message("finally"))
+    sleeps: list[float] = []
+    client = make(tmp_path, fake, sleep=sleeps.append, backoff_base=1.0)
+    assert client.complete(HAIKU, USER).text == "finally"
+    assert len(fake.messages.calls) == 3
+    assert sleeps == [1.0, 2.0]
+
+
+def test_overloaded_529_is_retried(tmp_path):
+    import anthropic
+
+    err = _status_error(anthropic.APIStatusError, 529)
+    fake = FakeAnthropic(err, message("ok"))
+    client = make(tmp_path, fake, sleep=lambda s: None)
+    assert client.complete(HAIKU, USER).text == "ok"
+
+
+def test_retries_give_up_and_raise(tmp_path):
+    import anthropic
+
+    err = _status_error(anthropic.RateLimitError, 429)
+    fake = FakeAnthropic(err)
+    client = make(tmp_path, fake, sleep=lambda s: None, max_retries=2)
+    with pytest.raises(anthropic.RateLimitError):
+        client.complete(HAIKU, USER)
+    assert len(fake.messages.calls) == 3
+    assert "RateLimitError" in log_rows(tmp_path)[-1]["error"]
+
+
+def test_client_errors_are_not_retried(tmp_path):
+    import anthropic
+
+    err = _status_error(anthropic.BadRequestError, 400)
+    fake = FakeAnthropic(err)
+    client = make(tmp_path, fake, sleep=lambda s: None)
+    with pytest.raises(anthropic.BadRequestError):
+        client.complete(HAIKU, USER)
+    assert len(fake.messages.calls) == 1
+
+
+def test_spend_cap_aborts_before_the_next_call(tmp_path):
+    from priscianus.llm.client import SpendCapExceeded
+
+    # Each call costs $1.00 on Sonnet (500k input tokens).
+    fake = FakeAnthropic(message(input_tokens=500_000, output_tokens=0))
+    client = make(tmp_path, fake, spend_cap_usd=1.5)
+    client.complete(SONNET, [{"role": "user", "content": "a"}])
+    client.complete(SONNET, [{"role": "user", "content": "b"}])  # spent $2.00 > cap
+    with pytest.raises(SpendCapExceeded):
+        client.complete(SONNET, [{"role": "user", "content": "c"}])
+    assert len(fake.messages.calls) == 2
+
+
+def test_cache_hits_do_not_count_towards_the_spend_cap(tmp_path):
+    fake = FakeAnthropic(message(input_tokens=500_000, output_tokens=0))
+    client = make(tmp_path, fake, spend_cap_usd=1.5)
+    for _ in range(5):
+        client.complete(SONNET, USER)
+    assert len(fake.messages.calls) == 1
+
+
+def test_from_env_reads_the_api_key_from_the_environment(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    client = LLMClient.from_env(db_path=tmp_path / "llm.db")
+    assert client._api.api_key == "sk-test"

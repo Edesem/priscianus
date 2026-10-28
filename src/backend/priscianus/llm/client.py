@@ -4,10 +4,12 @@ import hashlib
 import json
 import sqlite3
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import anthropic
 
 from priscianus.llm.config import cost_usd
 
@@ -62,17 +64,47 @@ class LLMResponse:
         return json.loads(self.text)
 
 
+class SpendCapExceeded(RuntimeError):
+    """Raised before a call when this client has already spent its cap."""
+
+
+def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, anthropic.RateLimitError):
+        return True
+    # 5xx (including 529 overloaded) and dropped connections are transient.
+    if isinstance(exc, anthropic.APIStatusError):
+        return exc.status_code >= 500
+    return isinstance(exc, anthropic.APIConnectionError)
+
+
 class LLMClient:
-    def __init__(self, api_client: Any, *, db_path: Path | str = DEFAULT_DB) -> None:
-        """`api_client` is an `anthropic.Anthropic`, or a fake with `.messages.create`."""
+    def __init__(
+        self,
+        api_client: Any,
+        *,
+        db_path: Path | str = DEFAULT_DB,
+        spend_cap_usd: float | None = None,
+        max_retries: int = 5,
+        backoff_base: float = 1.0,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        """`api_client` is an `anthropic.Anthropic`, or a fake with `.messages.create`.
+
+        `spend_cap_usd` limits what this client spends in its lifetime (one run). A call
+        that would start after the cap is reached raises `SpendCapExceeded`; the call that
+        crosses it still completes, so a run overshoots by at most one call.
+        """
         self._api = api_client
+        self._spend_cap = spend_cap_usd
+        self._spent = 0.0
+        self._max_retries = max_retries
+        self._backoff_base = backoff_base
+        self._sleep = sleep
         self._db = sqlite3.connect(db_path)
         self._db.executescript(_SCHEMA)
 
     @classmethod
     def from_env(cls, *, db_path: Path | str = DEFAULT_DB) -> "LLMClient":
-        import anthropic
-
         # Reads ANTHROPIC_API_KEY from the environment. Retries are ours, so they are logged.
         return cls(anthropic.Anthropic(max_retries=0), db_path=db_path)
 
@@ -114,11 +146,9 @@ class LLMClient:
             self._log(model, key, response, 0.0, started, None)
             return response
 
-        try:
-            raw = self._api.messages.create(**request)
-        except Exception as exc:
-            self._log(model, key, None, 0.0, started, f"{type(exc).__name__}: {exc}")
-            raise
+        if self._spend_cap is not None and self._spent >= self._spend_cap:
+            raise SpendCapExceeded(f"spent ${self._spent:.4f} of ${self._spend_cap:.4f} cap")
+        raw = self._create_with_retries(model, key, request)
         response = _from_message(raw)
         usd = cost_usd(
             model,
@@ -133,8 +163,21 @@ class LLMClient:
                 " response_json, usd) VALUES (?, ?, ?, ?, ?)",
                 (key, model, _canonical(request), _to_json(response), usd),
             )
+        self._spent += usd
         self._log(model, key, response, usd, started, None)
         return response
+
+    def _create_with_retries(self, model: str, key: str, request: dict[str, Any]) -> Any:
+        for attempt in range(self._max_retries + 1):
+            started = time.monotonic()
+            try:
+                return self._api.messages.create(**request)
+            except Exception as exc:
+                self._log(model, key, None, 0.0, started, f"{type(exc).__name__}: {exc}")
+                if attempt == self._max_retries or not _is_retryable(exc):
+                    raise
+                self._sleep(self._backoff_base * 2**attempt)
+        raise AssertionError("unreachable")
 
     def _log(
         self,
