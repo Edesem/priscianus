@@ -129,9 +129,11 @@ The eval is the headline of the project. Put the results table at the top of the
 4. **Adversarial set:** ~100 traps: ambiguous forms, deponents, irregular verbs (*ferō*, *eō*), defective nouns, invented non-words ("parse *amabavit*"). The correct behaviour for a non-word is to say so.
 
 ### Metrics
+Exact definitions for the parse set, and the meaning of each verdict, are in [ADR-003](adr/ADR-003.md).
+
 | Metric | Definition |
 |---|---|
-| **Claim accuracy** | VERIFIED claims ÷ all claims |
+| **Claim accuracy** | (VERIFIED + AMBIGUOUS) claims ÷ all claims (a right reading of an ambiguous form is right; see [ADR-003](adr/ADR-003.md)) |
 | **Hallucination rate** | CONTRADICTED claims ÷ all claims (the model said something the DB says is false) |
 | **Unverifiable rate** | UNKNOWN claims ÷ all claims (tracks coverage gaps in the index, not model error) |
 | **Parse exact match** | Full feature bundle matches the treebank gold for that token in context |
