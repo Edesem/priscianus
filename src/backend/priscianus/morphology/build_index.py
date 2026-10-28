@@ -24,6 +24,7 @@ CREATE TABLE lemmas (
     infl_class TEXT,
     deponent INTEGER NOT NULL DEFAULT 0,
     freq_band TEXT,
+    base_lemma TEXT,
     source TEXT NOT NULL
 );
 CREATE TABLE analyses (
@@ -66,7 +67,7 @@ _SOURCE = "wiktionary"
 # Forms from inflection tables carry full feature sets. Headword-line forms (no source)
 # carry only a tag or two, such as the genitive or the lemma's gender, so they are not analyses.
 _TABLE_SOURCES = frozenset({"declension", "conjugation", "inflection"})
-_SCHEMA_VERSION = "2"
+_SCHEMA_VERSION = "3"
 
 _LICENCE = (
     "Derived from English Wiktionary via Wiktextract (kaikki.org). "
@@ -200,6 +201,29 @@ def _merge_participle_features(con: sqlite3.Connection, participles: dict[int, s
         )
 
 
+# Sense tags of the forms whose lemma is another lemma's form: a participle, gerund or supine
+# is a form of its verb, and a comparative or superlative is a form of its positive.
+_BASE_LEMMA_TAGS = frozenset({"participle", "gerund", "supine", "comparative", "superlative"})
+
+
+def _base_lemma(entry: dict[str, Any]) -> str | None:
+    """The key of the lemma that this entry is a form of, if Wiktionary names exactly one.
+
+    Wiktionary links a participle, gerund, supine or comparative to its base in `form_of`.
+    Senses that name different bases are ambiguous and get none.
+    """
+    senses = entry.get("senses", [])
+    if not any(_BASE_LEMMA_TAGS & set(sense.get("tags", [])) for sense in senses):
+        return None
+    bases = {
+        key_loose(link["word"])
+        for sense in senses
+        if _BASE_LEMMA_TAGS & set(sense.get("tags", []))
+        for link in sense.get("form_of", [])
+    }
+    return bases.pop() if len(bases) == 1 else None
+
+
 def _is_deponent(entry: dict[str, Any]) -> bool:
     """Whether Wiktionary's headword line calls a verb deponent or semi-deponent.
 
@@ -232,8 +256,16 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
         return None
     deponent = int(_is_deponent(entry))
     cur = con.execute(
-        "INSERT INTO lemmas (lemma, lemma_display, pos, deponent, source) VALUES (?, ?, ?, ?, ?)",
-        (key_loose(entry["word"]), entry["word"], entry["pos"], deponent, _SOURCE),
+        "INSERT INTO lemmas (lemma, lemma_display, pos, deponent, base_lemma, source)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            key_loose(entry["word"]),
+            entry["word"],
+            entry["pos"],
+            deponent,
+            _base_lemma(entry),
+            _SOURCE,
+        ),
     )
     report.lemmas += 1
     report.deponents += deponent
