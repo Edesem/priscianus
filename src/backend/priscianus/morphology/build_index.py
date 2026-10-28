@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from priscianus.morphology.normaliser import key_loose, key_macron
+from priscianus.morphology.syncope import syncopate
 from priscianus.morphology.ud_features import UnknownTagError, map_tags
 
 _SCHEMA = """
@@ -85,6 +86,7 @@ class BuildReport:
     lemmas: int = 0
     analyses: int = 0
     deponents: int = 0
+    syncopated: int = 0
     skipped: Counter[str] = field(default_factory=Counter)
     skipped_forms: Counter[str] = field(default_factory=Counter)
 
@@ -105,6 +107,7 @@ def build_index(dump: Path, db: Path) -> BuildReport:
             if lemma_id is not None and _is_participle(entry):
                 participles[lemma_id] = key_loose(entry["word"])
     _merge_participle_features(con, participles)
+    report.syncopated = _add_syncopated_perfects(con)
     con.executemany(
         "INSERT INTO meta (key, value) VALUES (?, ?)",
         [
@@ -117,6 +120,34 @@ def build_index(dump: Path, db: Path) -> BuildReport:
     con.commit()
     con.close()
     return report
+
+
+_SYNCOPE_SOURCE = "syncopation"
+
+
+def _add_syncopated_perfects(con: sqlite3.Connection) -> int:
+    """Add the syncopated spelling of each active finite perfect that has one.
+
+    Wiktionary tables list *nuntiāvērunt* but not *nuntiārunt*. The new analysis has the
+    same lemma and features as the full form, and its own source so that it can be told apart.
+    """
+    columns = ", ".join(f'"{column}"' for column in _COLUMNS.values())
+    rows = con.execute(
+        f"SELECT lemma_id, form_display, {columns} FROM analyses"
+        " WHERE tense = 'Past' AND aspect = 'Perf' AND voice = 'Act' AND verb_form = 'Fin'"
+    ).fetchall()
+    existing = {(lemma_id, key_loose(form), *features) for lemma_id, form, *features in rows}
+    added = 0
+    for lemma_id, form, *features in rows:
+        short = syncopate(form)
+        if short is None or (lemma_id, key_loose(short), *features) in existing:
+            continue
+        con.execute(
+            _INSERT_ANALYSIS,
+            (lemma_id, short, key_loose(short), key_macron(short), *features, _SYNCOPE_SOURCE),
+        )
+        added += 1
+    return added
 
 
 def _dump_date(dump: Path) -> str:
@@ -263,6 +294,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(f"lemmas: {report.lemmas}")
     print(f"analyses: {report.analyses}")
     print(f"deponent lemmas: {report.deponents}")
+    print(f"syncopated perfects: {report.syncopated}")
     print(f"skipped entries: {report.skipped.total()}")
     for reason, count in report.skipped.most_common():
         print(f"  {reason}: {count}")
