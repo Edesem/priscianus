@@ -12,7 +12,7 @@ from evals.gold import GoldToken
 
 # Stored with every response. Change it whenever SYSTEM_PROMPT, OUTPUT_SCHEMA or the user
 # message changes, so that results from different prompts are never mixed.
-PROMPT_ID = "raw-parse-v2"
+PROMPT_ID = "raw-parse-v3"
 
 UPOS_TAGS: tuple[str, ...] = (
     "ADJ",
@@ -96,6 +96,10 @@ Lemma conventions:
 
 Feature conventions:
 - Give a value only for a feature that the word has; give "None" for the rest. Do not guess.
+- Personal, reflexive and possessive pronouns and determiners have Person: ego and meus are 1, \
+tu and tuus are 2, is, se and suus are 3.
+- Give Gender from the noun that the word agrees with or refers to, even when its form is the \
+same in several genders.
 - The imperfect is Tense=Past with Aspect=Imp; the perfect is Tense=Past with Aspect=Perf; \
 the pluperfect is Tense=Pqp; the future perfect is Tense=Fut with Aspect=Perf. Give Aspect \
 only for these.

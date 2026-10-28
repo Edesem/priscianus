@@ -190,3 +190,16 @@ def test_a_truncated_response_is_a_failure():
     result = parse_claim(truncated)
     assert isinstance(result, ParseFailure)
     assert "max_tokens" in result.reason
+
+
+def test_prompt_id_names_this_version():
+    assert PROMPT_ID == "raw-parse-v3"
+
+
+def test_system_prompt_gives_pronouns_a_person():
+    assert "Personal, reflexive and possessive pronouns" in SYSTEM_PROMPT
+    assert "Person" in SYSTEM_PROMPT.split("Personal, reflexive and possessive pronouns")[1][:200]
+
+
+def test_system_prompt_takes_gender_from_the_word_it_agrees_with():
+    assert "agrees with or refers to" in SYSTEM_PROMPT
