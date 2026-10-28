@@ -398,3 +398,39 @@ def summary_table(items: Sequence[Item]) -> str:
     dev = sum(n for k, n in counts.items() if k[3] == "dev")
     lines.append(f"| **Total** | | | {test} | {dev} |")
     return "\n".join(lines)
+
+
+TRAIN_TREEBANKS = ("perseus", "proiel", "ittb", "llct", "udante", "circse")
+TEST_TREEBANKS = ("perseus", "proiel", "ittb")
+DEFAULT_SEED = 39
+DEFAULT_SIZES = {"test": 500, "dev": 150}
+
+
+def build_set(
+    *, ud_dir: Path, out_dir: Path, version: str, seed: int, release: str
+) -> tuple[Path, str]:
+    """Build and write a parse set from the downloaded files; return the manifest and summary.
+
+    Raises FileNotFoundError if a treebank file is missing, and `ManifestExistsError` if the
+    version is already written.
+    """
+    names = [f"la_{tb}-ud-train.conllu" for tb in TRAIN_TREEBANKS]
+    names += [_file_name(tb) for tb in TEST_TREEBANKS]
+    missing = [name for name in names if not (ud_dir / name).exists()]
+    if missing:
+        raise FileNotFoundError(f"Missing {', '.join(missing)} in {ud_dir}; run `make eval-data`")
+    ranks = frequency_ranks(
+        {tb: read_conllu(ud_dir / f"la_{tb}-ud-train.conllu") for tb in TRAIN_TREEBANKS}
+    )
+    candidates = [t for tb in TEST_TREEBANKS for t in read_conllu(ud_dir / _file_name(tb))]
+    sample = sample_items(candidates, ranks, seed=seed, sizes=DEFAULT_SIZES)
+    manifest = write_manifest(
+        sample,
+        version=version,
+        seed=seed,
+        sizes=DEFAULT_SIZES,
+        ud_dir=ud_dir,
+        out_dir=out_dir,
+        release=release,
+    )
+    return manifest, summary_table(sample.items)
