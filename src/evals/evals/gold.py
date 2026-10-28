@@ -19,7 +19,9 @@ class GoldToken:
     `features` are the treebank's own, unmapped. `mwt_form` is the surface word when the
     treebank split it into several tokens (Perseus *mecum* = *me* + *cum*; *-que*, *-ne*
     and *-ve* in Perseus and ITTB). Such a word is half of a split, so it has no surface
-    form of its own to show the model (ADR-003, Decision 3).
+    form of its own to show the model (ADR-003, Decision 3). `source` is where the sentence
+    comes from: Perseus's `# newdoc id` (which holds for the sentences after it), PROIEL's
+    `# source`, and empty for ITTB, which is all Aquinas.
     """
 
     treebank: str
@@ -31,6 +33,7 @@ class GoldToken:
     features: dict[str, str]
     sentence: str
     mwt_form: str | None
+    source: str = ""
 
 
 def read_conllu(path: Path) -> list[GoldToken]:
@@ -47,7 +50,10 @@ def parse_conllu(text: str, *, treebank: str) -> list[GoldToken]:
     it spans through `mwt_form`.
     """
     tokens: list[GoldToken] = []
+    doc_id = ""
     for sentence in conllu.parse(text):
+        doc_id = sentence.metadata.get("newdoc id", doc_id)
+        source = sentence.metadata.get("source", doc_id)
         mwt_forms: dict[int, str] = {}
         for token in sentence:
             token_id = token["id"]
@@ -69,6 +75,7 @@ def parse_conllu(text: str, *, treebank: str) -> list[GoldToken]:
                     features=dict(token["feats"] or {}),
                     sentence=sentence.metadata["text"],
                     mwt_form=mwt_forms.get(token_id),
+                    source=source,
                 )
             )
     return tokens
