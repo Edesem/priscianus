@@ -104,9 +104,10 @@ class LLMClient:
         self._db.executescript(_SCHEMA)
 
     @classmethod
-    def from_env(cls, *, db_path: Path | str = DEFAULT_DB) -> "LLMClient":
-        # Reads ANTHROPIC_API_KEY from the environment. Retries are ours, so they are logged.
-        return cls(anthropic.Anthropic(max_retries=0), db_path=db_path)
+    def from_env(cls, **options: Any) -> "LLMClient":
+        """Build a client from `ANTHROPIC_API_KEY`; `options` are the constructor's keywords."""
+        # The SDK's own retries are off, because ours are logged.
+        return cls(anthropic.Anthropic(max_retries=0), **options)
 
     def complete(
         self,

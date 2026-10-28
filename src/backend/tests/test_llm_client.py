@@ -252,3 +252,10 @@ def test_from_env_reads_the_api_key_from_the_environment(tmp_path, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
     client = LLMClient.from_env(db_path=tmp_path / "llm.db")
     assert client._api.api_key == "sk-test"
+
+
+def test_from_env_passes_client_options_through(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    client = LLMClient.from_env(db_path=tmp_path / "llm.db", spend_cap_usd=0.05, max_retries=2)
+    assert client._spend_cap == 0.05
+    assert client._max_retries == 2
