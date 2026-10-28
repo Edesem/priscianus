@@ -6,7 +6,7 @@
     "dev": 150
   },
   "ud_release": "r2.18",
-  "item_count": 1285,
+  "item_count": 1300,
   "file_sha256": {
     "la_ittb-ud-test.conllu": "b25d8f12a7f483ff6152ce3b3724aabafffc1336103526229c919808f9de5f1e",
     "la_perseus-ud-test.conllu": "e0e53fdcc8040a2a6d3b6e7b5dfa69fa35d355ce11cae0682b61e6848745d386",
@@ -36,7 +36,5 @@
     "Ecclesiastical|verb|rare": 30,
     "Ecclesiastical|verb|top1k": 6466
   },
-  "shortfalls": {
-    "test|Ecclesiastical|verb|rare": 15
-  }
+  "shortfalls": {}
 }
