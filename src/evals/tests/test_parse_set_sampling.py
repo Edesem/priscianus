@@ -26,7 +26,7 @@ def make_pool(
     for (source, cls, band, _), n in plan.items():
         for _ in range(n):
             i = next(ids)
-            lemma = "lemma" + "".join(chr(97 + int(d)) for d in str(i))  # digits would be stripped
+            lemma = "lemma" + "".join("abcdefghkl"[int(d)] for d in str(i))  # distinct loose keys
             if BAND_RANK[band] is not None:
                 ranks[lemma] = BAND_RANK[band]
             tokens.append(
@@ -194,3 +194,23 @@ def test_source_label_names_the_work_not_the_passage(treebank, source, label):
     token = GoldToken(treebank, "s", 1, "f", "l", "NOUN", {}, "f", None, source)
 
     assert source_label(token) == label
+
+
+def test_dev_and_test_share_a_short_cell_and_both_still_fill_their_class_quota():
+    plan = full_plan(60)
+    plan[("ittb", "verb", "rare", "")] = 2
+    plan[("proiel-vulgate", "verb", "rare", "")] = 1
+    tokens, ranks = make_pool(plan)
+
+    result = sample_items(tokens, ranks, seed=1, sizes={"test": 40, "dev": 12})
+
+    for split, size in (("test", 40), ("dev", 12)):
+        verbs = [
+            i
+            for i in result.items
+            if i.split == split and i.slice == "Ecclesiastical" and i.pos_class == "verb"
+        ]
+        assert len(verbs) == sum(n for (c, _), n in cell_quotas(size).items() if c == "verb")
+    rare = [i for i in result.items if i.slice == "Ecclesiastical" and i.freq_band == "rare"]
+    assert len([i for i in rare if i.pos_class == "verb"]) == 3
+    assert result.shortfalls == {}

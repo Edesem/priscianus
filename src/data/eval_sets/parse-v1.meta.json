@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "seed": 39,
+  "sizes": {
+    "test": 500,
+    "dev": 150
+  },
+  "ud_release": "r2.18",
+  "item_count": 1285,
+  "file_sha256": {
+    "la_ittb-ud-test.conllu": "b25d8f12a7f483ff6152ce3b3724aabafffc1336103526229c919808f9de5f1e",
+    "la_perseus-ud-test.conllu": "e0e53fdcc8040a2a6d3b6e7b5dfa69fa35d355ce11cae0682b61e6848745d386",
+    "la_proiel-ud-test.conllu": "35be241f1b5b47b66c2f222c611dfa80cd0ed9ec2e621fe352e8d4a1875183b4"
+  },
+  "candidate_counts": {
+    "Classical|adj|1k-10k": 499,
+    "Classical|adj|rare": 165,
+    "Classical|adj|top1k": 512,
+    "Classical|noun|1k-10k": 1414,
+    "Classical|noun|rare": 406,
+    "Classical|noun|top1k": 1793,
+    "Classical|pron_det|all": 1989,
+    "Classical|uninflected|all": 3701,
+    "Classical|verb|1k-10k": 1233,
+    "Classical|verb|rare": 149,
+    "Classical|verb|top1k": 2419,
+    "Ecclesiastical|adj|1k-10k": 654,
+    "Ecclesiastical|adj|rare": 78,
+    "Ecclesiastical|adj|top1k": 1342,
+    "Ecclesiastical|noun|1k-10k": 1412,
+    "Ecclesiastical|noun|rare": 78,
+    "Ecclesiastical|noun|top1k": 5276,
+    "Ecclesiastical|pron_det|all": 5162,
+    "Ecclesiastical|uninflected|all": 10492,
+    "Ecclesiastical|verb|1k-10k": 1034,
+    "Ecclesiastical|verb|rare": 30,
+    "Ecclesiastical|verb|top1k": 6466
+  },
+  "shortfalls": {
+    "test|Ecclesiastical|verb|rare": 15
+  }
+}

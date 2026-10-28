@@ -189,24 +189,31 @@ def sample_items(
 
     wanted: dict[tuple[str, str, Cell], int] = {}
     shortfalls: dict[str, int] = {}
+    quotas = {split: cell_quotas(size) for split, size in sizes.items()}
     for slice_name in ("Classical", "Ecclesiastical"):
-        for split, size in sizes.items():
-            quotas = cell_quotas(size)
+        for split in sizes:
             for cls in _CLASS_SHARES:
-                cell: Cell
                 if cls not in _OPEN_CLASSES:
-                    cell = (cls, None)
-                    wanted[(slice_name, split, cell)] = quotas[cell]
-                    continue
-                carry = 0
-                for band in _BANDS_RARE_FIRST:
-                    cell = (cls, band)
-                    want = quotas[cell] + carry
-                    take = min(want, len(pools[(slice_name, cell)]))
-                    wanted[(slice_name, split, cell)] = take
-                    carry = want - take
-                if carry:
-                    shortfalls[_cell_name(slice_name, (cls, None), split)] = carry
+                    wanted[(slice_name, split, (cls, None))] = quotas[split][(cls, None)]
+        for cls in _OPEN_CLASSES:
+            # Dev and test draw on the same sentences, so what is left shrinks as splits take.
+            left = {
+                band: len(
+                    {(i.token.treebank, i.token.sent_id) for i in pools[(slice_name, (cls, band))]}
+                )
+                for band in _BANDS_RARE_FIRST
+            }
+            carry = dict.fromkeys(sizes, 0)
+            for band in _BANDS_RARE_FIRST:
+                for split in sizes:
+                    want = quotas[split][(cls, band)] + carry[split]
+                    take = min(want, left[band])
+                    left[band] -= take
+                    wanted[(slice_name, split, (cls, band))] = take
+                    carry[split] = want - take
+            for split, short in carry.items():
+                if short:
+                    shortfalls[_cell_name(slice_name, (cls, None), split)] = short
 
     rng = random.Random(seed)
     used: set[tuple[str, str]] = set()
