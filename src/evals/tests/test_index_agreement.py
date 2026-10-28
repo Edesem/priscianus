@@ -1,4 +1,5 @@
 from priscianus.morphology.lookup import Analysis
+from priscianus.morphology.normaliser import key_loose
 
 from evals.gold import GoldToken
 from evals.index_agreement import Agreement, check_token
@@ -68,7 +69,11 @@ def test_matching_analysis_agrees_at_every_level():
 
 def test_participle_linked_to_its_verb_agrees_at_the_lemma_level():
     token = gold("paventes", "paveo", "VERB", {"Case": "Acc", "VerbForm": "Part", "Tense": "Pres"})
-    found = [analysis("pavens", "verb", {"Case": "Acc", "VerbForm": "Part"}, base_lemma="paveo")]
+    found = [
+        analysis(
+            "pavens", "verb", {"Case": "Acc", "VerbForm": "Part"}, base_lemma=key_loose("paveo")
+        )
+    ]
 
     assert check_token(token, lambda form: found) == Agreement(
         in_index=True, lemma_found=True, parse_matches=False
