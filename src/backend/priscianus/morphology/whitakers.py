@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from priscianus.morphology.build_index import DEFAULT_DB
+from priscianus.morphology.canonical import canonicalise, relax
 from priscianus.morphology.lookup import Analysis, lookup_form
 
 # Whitaker's code -> UD features, per field. Codes for "any" or "not applicable"
@@ -93,10 +94,11 @@ def compare(word: str, expected: list[dict[str, str]], db: Path = DEFAULT_DB) ->
     found = lookup_form(word, db)
     if not found:
         return Comparison(word, "missing", found, list(expected))
+    canonical = [canonicalise(analysis.features) for analysis in found]
     unmatched = [
         features
         for features in expected
-        if not any(features.items() <= analysis.features.items() for analysis in found)
+        if not any(canonicalise(features).items() <= c.items() for c in canonical)
     ]
     return Comparison(word, "differ" if unmatched else "agree", found, unmatched)
 
@@ -105,21 +107,13 @@ DEFAULT_FIXTURE = DEFAULT_DB.parent / "spot_check" / "whitakers.json"
 
 
 def _expected_features(analysis: dict[str, Any]) -> dict[str, str]:
-    """Whitaker's features for one analysis, minus what the index never records.
-
-    Wiktionary tables give noun forms no gender (it belongs to the lemma) and
-    leave positive adjectives without a degree, so neither can disagree. It
-    also tags every form of a deponent Voice=Act where Whitaker's says passive
-    (see ADR-002), so voice is not compared for deponents.
-    """
+    """Whitaker's features for one analysis, minus what the index never records (see `relax`)."""
     features = whitakers_to_ud(analysis["infl"], verb_form=analysis["verb_form"])
-    if analysis["pos"] == "N":
-        features.pop("Gender", None)
-    if features.get("Degree") == "Pos":
-        del features["Degree"]
-    if analysis["pos"] == "V" and _is_deponent(analysis.get("entry", "")):
-        features.pop("Voice", None)
-    return features
+    return relax(
+        features,
+        noun=analysis["pos"] == "N",
+        deponent=analysis["pos"] == "V" and _is_deponent(analysis.get("entry", "")),
+    )
 
 
 def _is_deponent(entry: str) -> bool:

@@ -1,4 +1,4 @@
-.PHONY: help setup dev backend frontend build test test-backend test-frontend lint format clean data eval-data eval-smoke
+.PHONY: help setup dev backend frontend build test test-backend test-evals test-frontend lint format clean data eval-data eval-smoke
 .DEFAULT_GOAL := help
 
 BACKEND_PORT ?= 8000
@@ -9,6 +9,7 @@ help: ## List available commands
 
 setup: ## Install deps and git hooks
 	cd src/backend && uv sync
+	cd src/evals && uv sync
 	pre-commit install
 	@if [ -f src/frontend/package.json ]; then cd src/frontend && pnpm install; fi
 
@@ -24,20 +25,25 @@ frontend: ## Run the Vite dev server on FRONTEND_PORT (default 5173)
 build: ## Build the frontend for production
 	cd src/frontend && pnpm build
 
-test: test-backend test-frontend ## Run all tests
+test: test-backend test-evals test-frontend ## Run all tests
 
 test-backend: ## Run pytest with coverage
 	cd src/backend && uv run pytest
+
+test-evals: ## Run the evals' pytest with coverage
+	cd src/evals && uv run pytest
 
 test-frontend: ## Run frontend tests once
 	@if [ -f src/frontend/package.json ]; then cd src/frontend && pnpm test --run; fi
 
 lint: ## Run ruff, mypy and frontend lint
 	cd src/backend && uv run ruff check . && uv run ruff format --check . && uv run mypy priscianus
+	cd src/evals && uv run ruff check . && uv run ruff format --check . && uv run mypy evals
 	@if [ -f src/frontend/package.json ]; then cd src/frontend && pnpm lint; fi
 
 format: ## Auto-fix Python
 	cd src/backend && uv run ruff check --fix . && uv run ruff format .
+	cd src/evals && uv run ruff check --fix . && uv run ruff format .
 
 clean: ## Remove caches and build output
 	find src \( -name node_modules -o -name .venv \) -prune -o -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +
