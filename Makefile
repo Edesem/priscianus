@@ -1,4 +1,4 @@
-.PHONY: help setup dev backend frontend build test test-backend test-evals test-frontend lint format clean data eval-data eval-smoke
+.PHONY: help setup dev backend frontend build test test-backend test-evals test-frontend lint format clean data eval-data eval-smoke parse-eval
 .DEFAULT_GOAL := help
 
 BACKEND_PORT ?= 8000
@@ -59,3 +59,8 @@ eval-data: ## Download the UD Latin treebanks (pinned r2.18) into src/data/raw/u
 
 eval-smoke: ## Run the eval smoke test (not yet implemented)
 	@echo "Eval smoke test arrives in Milestone 3."
+
+parse-eval: ## Test the morphology parser, parse one word, then run the evals' tests (needs make data)
+	cd src/backend && uv run pytest tests/test_lookup.py tests/test_normaliser.py tests/test_canonical.py tests/test_ud_features.py tests/test_cli.py
+	cd src/backend && uv run python -m priscianus.morphology parse amabat
+	cd src/evals && uv run pytest
