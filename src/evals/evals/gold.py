@@ -3,9 +3,13 @@
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from itertools import product
 from pathlib import Path
 
 import conllu
+from priscianus.morphology.canonical import canonicalise, relax
+from priscianus.morphology.lookup import Analysis
+from priscianus.morphology.normaliser import key_loose
 
 
 @dataclass(frozen=True)
@@ -145,3 +149,40 @@ def map_features(features: Mapping[str, str]) -> dict[str, str]:
                 raise UnknownFeatureError(feature, member)
         mapped[feature] = value
     return mapped
+
+
+def lemma_keys(lemma: str) -> frozenset[str]:
+    """The loose keys a gold lemma may match, after the treebanks' lemma quirks.
+
+    Perseus has a stray comma (*uterque,*). PROIEL puts optional letters in brackets
+    (*dext(e)ra*, *(h)arena*), so the lemma may be spelt with or without them. A homograph
+    number (*sum1*) is not part of the lemma.
+    """
+    cleaned = re.sub(r"\d+$", "", lemma.strip().rstrip(",;:."))
+    parts = re.split(r"\(([^)]*)\)", cleaned)
+    # Odd items are the bracketed letters; each is either left out or kept.
+    choices = [("", part) if i % 2 else (part,) for i, part in enumerate(parts)]
+    return frozenset(key_loose("".join(chosen)) for chosen in product(*choices))
+
+
+def matches(gold: GoldToken, analysis: Analysis) -> bool:
+    """Whether an index analysis agrees with a gold parse.
+
+    The lemmas must have the same loose key, and every compared feature the gold marks
+    must be in the analysis (any member of a multi-valued gold feature will do). Features
+    the gold leaves out are not held against the analysis. Both sides are in canonical form
+    and the ADR-002 and spot-check relaxations are applied: gender is not compared on
+    nouns, nor voice on deponents. Without the deponent flag in the index (#38), a verb
+    lemma in *-or* counts as deponent (ADR-003, Decision 2).
+
+    Raises UnknownFeatureError for a gold feature we have no mapping for.
+    """
+    if key_loose(analysis.lemma) not in lemma_keys(gold.lemma):
+        return False
+    expected = relax(
+        canonicalise(map_features(gold.features)),
+        noun=gold.upos in ("NOUN", "PROPN"),
+        deponent=gold.upos in ("VERB", "AUX") and gold.lemma.rstrip("0123456789").endswith("or"),
+    )
+    actual = canonicalise(analysis.features)
+    return all(actual.get(name) in value.split(",") for name, value in expected.items())
