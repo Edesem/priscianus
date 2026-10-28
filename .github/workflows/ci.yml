@@ -20,6 +20,20 @@ jobs:
       - run: uv run mypy priscianus
       - run: uv run pytest
 
+  evals:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/evals
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy evals
+      - run: uv run pytest
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
