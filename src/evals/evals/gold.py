@@ -179,7 +179,8 @@ def matches(gold: GoldToken, analysis: Analysis) -> bool:
     must be in the analysis (any member of a multi-valued gold feature will do). Features
     the gold leaves out are not held against the analysis. Both sides are in canonical form
     and the ADR-002 and spot-check relaxations are applied: gender is not compared on
-    nouns, nor voice on deponents and semi-deponents, as the index flags them (ADR-002).
+    nouns, nor person on pronouns, nor voice on deponents and semi-deponents, as the index
+    flags them (ADR-002).
 
     Raises UnknownFeatureError for a gold feature we have no mapping for.
     """
@@ -189,6 +190,7 @@ def matches(gold: GoldToken, analysis: Analysis) -> bool:
         canonicalise(map_features(gold.features)),
         noun=gold.upos in ("NOUN", "PROPN"),
         deponent=analysis.deponent,
+        pronoun=gold.upos in ("PRON", "DET"),
     )
     actual = canonicalise(analysis.features)
     return all(actual.get(name) in value.split(",") for name, value in expected.items())

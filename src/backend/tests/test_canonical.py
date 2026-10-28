@@ -96,3 +96,10 @@ def test_relax_drops_voice_on_deponents_only():
     features = {"Mood": "Ind", "Voice": "Pass"}
     assert relax(features, noun=False, deponent=True) == {"Mood": "Ind"}
     assert relax(features, noun=False, deponent=False) == features
+
+
+def test_relax_drops_person_on_pronouns_only():
+    features = {"Case": "Acc", "Person": "3"}
+
+    assert relax(features, noun=False, deponent=False, pronoun=True) == {"Case": "Acc"}
+    assert relax(features, noun=False, deponent=False) == features
