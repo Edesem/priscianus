@@ -21,6 +21,7 @@ CREATE TABLE lemmas (
     lemma_display TEXT NOT NULL,
     pos TEXT NOT NULL,
     infl_class TEXT,
+    deponent INTEGER NOT NULL DEFAULT 0,
     freq_band TEXT,
     source TEXT NOT NULL
 );
@@ -64,7 +65,7 @@ _SOURCE = "wiktionary"
 # Forms from inflection tables carry full feature sets. Headword-line forms (no source)
 # carry only a tag or two, such as the genitive or the lemma's gender, so they are not analyses.
 _TABLE_SOURCES = frozenset({"declension", "conjugation", "inflection"})
-_SCHEMA_VERSION = "1"
+_SCHEMA_VERSION = "2"
 
 _LICENCE = (
     "Derived from English Wiktionary via Wiktextract (kaikki.org). "
@@ -82,6 +83,7 @@ class BuildReport:
     entries: int = 0
     lemmas: int = 0
     analyses: int = 0
+    deponents: int = 0
     skipped: Counter[str] = field(default_factory=Counter)
     skipped_forms: Counter[str] = field(default_factory=Counter)
 
@@ -167,6 +169,19 @@ def _merge_participle_features(con: sqlite3.Connection, participles: dict[int, s
         )
 
 
+def _is_deponent(entry: dict[str, Any]) -> bool:
+    """Whether Wiktionary's headword line calls a verb deponent or semi-deponent.
+
+    The line reads "...; third conjugation, deponent" or "...; second conjugation, optionally
+    semi-deponent". A `deponent` tag on a single sense is not enough: it marks a deponent use
+    of a verb that is active elsewhere (*manducō*). Semi-deponents are flagged with the
+    deponents, as ADR-002 and ADR-003 do not compare their voice either.
+    """
+    return entry["pos"] == "verb" and any(
+        "deponent" in template.get("expansion", "") for template in entry.get("head_templates", [])
+    )
+
+
 def _entry_degree(entry: dict[str, Any]) -> str | None:
     """Degree of a comparative or superlative lemma, from its sense tags.
 
@@ -184,11 +199,13 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
     if not rows:
         report.skipped["no inflected forms"] += 1
         return None
+    deponent = int(_is_deponent(entry))
     cur = con.execute(
-        "INSERT INTO lemmas (lemma, lemma_display, pos, source) VALUES (?, ?, ?, ?)",
-        (key_loose(entry["word"]), entry["word"], entry["pos"], _SOURCE),
+        "INSERT INTO lemmas (lemma, lemma_display, pos, deponent, source) VALUES (?, ?, ?, ?, ?)",
+        (key_loose(entry["word"]), entry["word"], entry["pos"], deponent, _SOURCE),
     )
     report.lemmas += 1
+    report.deponents += deponent
     degree = _entry_degree(entry)
     for display, reading in rows:
         reading = {"Degree": degree, **reading} if degree else reading
@@ -213,6 +230,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(f"entries: {report.entries}")
     print(f"lemmas: {report.lemmas}")
     print(f"analyses: {report.analyses}")
+    print(f"deponent lemmas: {report.deponents}")
     print(f"skipped entries: {report.skipped.total()}")
     for reason, count in report.skipped.most_common():
         print(f"  {reason}: {count}")

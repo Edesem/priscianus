@@ -96,7 +96,7 @@ def test_meta_records_schema_version_dump_date_and_build_hash(tmp_path: Path) ->
     build_index(dump, db)
 
     meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
-    assert meta["schema_version"] == "1"
+    assert meta["schema_version"] == "2"
     assert meta["dump_date"] == "Wed, 21 Oct 2026 13:51:28 GMT"
     assert len(meta["build_hash"]) == 64
 
@@ -365,3 +365,126 @@ def test_entry_tagged_both_comparative_and_superlative_is_left_unmarked(tmp_path
     build_index(_write_dump(tmp_path / "dump.jsonl", [both]), db)
 
     assert sqlite3.connect(db).execute("SELECT degree FROM analyses").fetchone() == (None,)
+
+
+def _verb(word: str, expansion: str) -> dict[str, object]:
+    return {
+        "word": word,
+        "pos": "verb",
+        "head_templates": [{"name": "la-verb", "expansion": expansion}],
+        "forms": [_form(word, "first-person", "singular", "present", "active", "indicative")],
+    }
+
+
+def _deponent_flags(db: Path) -> dict[str, int]:
+    return dict(sqlite3.connect(db).execute("SELECT lemma, deponent FROM lemmas"))
+
+
+def test_deponent_verb_is_flagged_from_the_headword_line(tmp_path: Path) -> None:
+    loquor = _verb("loquor", "loquor (perfect active locūtus sum); third conjugation, deponent")
+    amo = _verb("amō", "amō (perfect active amāvī); first conjugation")
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [loquor, amo]), db)
+
+    assert _deponent_flags(db) == {"loquor": 1, "amo": 0}
+
+
+def test_semi_deponent_verb_is_flagged(tmp_path: Path) -> None:
+    audeo = _verb("audeō", "audeō (perfect active ausus sum); second conjugation, semi-deponent")
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [audeo]), db)
+
+    assert _deponent_flags(db) == {"audeo": 1}
+
+
+def test_optionally_semi_deponent_verb_is_flagged(tmp_path: Path) -> None:
+    audeo = _verb("audeō", "audeō (perfect active ausī or ausus sum); optionally semi-deponent")
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [audeo]), db)
+
+    assert _deponent_flags(db) == {"audeo": 1}
+
+
+def test_a_deponent_sense_tag_alone_does_not_flag_the_lemma(tmp_path: Path) -> None:
+    manduco = {
+        **_verb("mandūcō", "mandūcō (perfect active mandūcāvī); first conjugation"),
+        "senses": [{"glosses": ["to eat"], "tags": ["deponent"]}],
+    }
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [manduco]), db)
+
+    assert _deponent_flags(db) == {"manduco": 0}
+
+
+def test_non_verbs_are_never_flagged(tmp_path: Path) -> None:
+    odd = {**ROSA, "head_templates": [{"name": "la-noun", "expansion": "rosa, deponent"}]}
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [odd]), db)
+
+    assert _deponent_flags(db) == {"rosa": 0}
+
+
+def test_report_counts_flagged_lemmas_and_main_prints_the_count(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    loquor = _verb("loquor", "loquor (perfect active locūtus sum); third conjugation, deponent")
+    audeo = _verb("audeō", "audeō (perfect active ausus sum); second conjugation, semi-deponent")
+    amo = _verb("amō", "amō (perfect active amāvī); first conjugation")
+    dump = _write_dump(tmp_path / "dump.jsonl", [loquor, audeo, amo, ROSA])
+
+    report = build_index(dump, tmp_path / "morphology.db")
+    main([str(dump), str(tmp_path / "again.db")])
+
+    assert report.deponents == 2
+    assert "deponent lemmas: 2" in capsys.readouterr().out
+
+
+# Headword lines copied from the Wiktextract dump.
+_REAL_HEADWORDS = {
+    "loquor": (
+        "loquor (present infinitive loquī or loquier, perfect active locūtus sum); "
+        "third conjugation, deponent"
+    ),
+    "sequor": (
+        "sequor (present infinitive sequī, perfect active secūtus sum or sequūtus sum); "
+        "third conjugation, deponent"
+    ),
+    "hortor": (
+        "hortor (present infinitive hortārī or hortārier, perfect active hortātus sum); "
+        "first conjugation, deponent"
+    ),
+    "morior": (
+        "morior (present infinitive morī or morīrī, perfect active mortuus sum); "
+        "third (-iō variant) / fourth conjugation, deponent, no passive"
+    ),
+    "ūtor": ("ūtor (present infinitive ūtī, perfect active ūsus sum); third conjugation, deponent"),
+    "audeō": (
+        "audeō (present infinitive audēre, perfect active ausī or ausus sum, supine ausum); "
+        "second conjugation, optionally semi-deponent"
+    ),
+}
+
+
+def test_spot_check_of_real_deponent_headword_lines(tmp_path: Path) -> None:
+    entries = [_verb(word, line) for word, line in _REAL_HEADWORDS.items()]
+    entries.append(
+        _verb("amō", "amō (present infinitive amāre, perfect active amāvī); first conjugation")
+    )
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", entries), db)
+
+    assert _deponent_flags(db) == {
+        "loquor": 1,
+        "sequor": 1,
+        "hortor": 1,
+        "morior": 1,
+        "utor": 1,
+        "audeo": 1,
+        "amo": 0,
+    }

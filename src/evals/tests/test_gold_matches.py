@@ -18,8 +18,15 @@ def gold(lemma: str, upos: str, features: dict[str, str], form: str = "x") -> Go
     )
 
 
-def analysis(lemma: str, pos: str, features: dict[str, str]) -> Analysis:
-    return Analysis(lemma=lemma, lemma_display=lemma, pos=pos, form="x", features=features)
+def analysis(lemma: str, pos: str, features: dict[str, str], deponent: bool = False) -> Analysis:
+    return Analysis(
+        lemma=lemma,
+        lemma_display=lemma,
+        pos=pos,
+        form="x",
+        features=features,
+        deponent=deponent,
+    )
 
 
 def test_agrees_on_lemma_and_every_gold_feature():
@@ -148,7 +155,21 @@ def test_gender_is_compared_on_adjectives():
 def test_voice_is_not_compared_on_deponents():
     token = gold("loquor", "VERB", {"Mood": "Ind", "Voice": "Pass"})
 
-    assert matches(token, analysis("loquor", "verb", {"Mood": "Ind", "Voice": "Act"}))
+    assert matches(
+        token, analysis("loquor", "verb", {"Mood": "Ind", "Voice": "Act"}, deponent=True)
+    )
+
+
+def test_voice_is_not_compared_on_semi_deponents_whose_lemma_does_not_end_in_or():
+    token = gold("audeo", "VERB", {"Mood": "Ind", "Voice": "Pass"})
+
+    assert matches(token, analysis("audeo", "verb", {"Mood": "Ind", "Voice": "Act"}, deponent=True))
+
+
+def test_the_index_flag_decides_not_the_lemma_ending():
+    token = gold("ruor", "VERB", {"Mood": "Ind", "Voice": "Pass"})
+
+    assert not matches(token, analysis("ruor", "verb", {"Mood": "Ind", "Voice": "Act"}))
 
 
 def test_voice_is_compared_on_other_verbs():

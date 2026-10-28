@@ -8,7 +8,7 @@ from priscianus.morphology.build_index import _COLUMNS, DEFAULT_DB
 from priscianus.morphology.normaliser import key_loose
 
 _SELECT = (
-    "SELECT l.lemma, l.lemma_display, l.pos, a.form_display, "
+    "SELECT l.lemma, l.lemma_display, l.pos, l.deponent, a.form_display, "
     + ", ".join(f'a."{column}"' for column in _COLUMNS.values())
     + " FROM analyses a JOIN lemmas l ON l.id = a.lemma_id"
     " WHERE a.key_loose = ? ORDER BY a.id"
@@ -22,6 +22,7 @@ class Analysis:
     pos: str
     form: str
     features: dict[str, str]
+    deponent: bool = False
 
 
 def lookup_form(form: str, db: Path = DEFAULT_DB) -> list[Analysis]:
@@ -38,6 +39,7 @@ def lookup_form(form: str, db: Path = DEFAULT_DB) -> list[Analysis]:
             pos=pos,
             form=display,
             features={f: v for f, v in zip(_COLUMNS, values, strict=True) if v is not None},
+            deponent=bool(deponent),
         )
-        for lemma, lemma_display, pos, display, *values in rows
+        for lemma, lemma_display, pos, deponent, display, *values in rows
     ]
