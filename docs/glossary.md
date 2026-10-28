@@ -52,7 +52,7 @@ Terms used in the Priscianus docs, grouped by area. Where a term is decided in a
 | **Deponent** | A verb that has passive forms but an active meaning, such as *loquor*. |
 | **Participle** | A verb form used as an adjective or noun, such as *amatus*. UD lists it under the verb's lemma, while Wiktionary often gives it its own entry ([#29](https://github.com/Edesem/priscianus/issues/29)). |
 | **Enclitic** | A suffix attached to a word, such as *-que*, *-ne* or *-ve*. The index handles enclitics in the query layer, not in the data. |
-| **Canonical form** | The one agreed form of a set of features after the treebanks' differences are resolved. For example, `Degree=Pos` is dropped, and `Aspect` is kept only with the past tenses. The eval and the verifier both use it ([ADR-003](adr/ADR-003.md), Decision 2). |
+| **Canonical form** | The one agreed form of a set of features after the treebanks' differences are resolved. For example, `Degree=Pos` is dropped, and `Aspect` is kept only with `Tense=Past` and on the future perfect. The eval and the verifier both use it ([ADR-003](adr/ADR-003.md), Decision 2). |
 
 ## Index and verifier
 
@@ -78,7 +78,7 @@ Terms used in the Priscianus docs, grouped by area. Where a term is decided in a
 |---|---|
 | **VERIFIED** | The claim matches a reading, and the form has no other reading. |
 | **AMBIGUOUS** | The claim matches a reading, but the form has other readings too. The claim is not wrong. |
-| **CONTRADICTED** | The claimed lemma is in the index, but no reading of the form matches the claim. This is a hallucination. |
+| **CONTRADICTED** | The claimed lemma is in the index, but no reading of the form matches the claim. It counts toward the hallucination rate. If the model matches the gold, it is an index disagreement instead. |
 | **UNKNOWN** | The claimed lemma is not in the index, so the index cannot say whether the claim is true. |
 
 ## Metrics
@@ -92,7 +92,7 @@ Terms used in the Priscianus docs, grouped by area. Where a term is decided in a
 | **Hallucination rate** | CONTRADICTED ÷ all claims. |
 | **Unverifiable rate** | UNKNOWN ÷ all claims. It measures gaps in the index, not model errors. |
 | **Format failure rate** | The share of items with no valid JSON answer. |
-| **Index disagreement** | An item where the model matches the gold answer, but the verifier marks its claim CONTRADICTED. It points to an index error, which is fixed in the index build, not in the eval. |
+| **Index disagreement** | An item where the model matches the gold answer (exact match and lemma match), but the verifier marks its claim CONTRADICTED. It points to an index error, which is fixed in the index build, not in the eval. |
 
 ## Pipeline
 
