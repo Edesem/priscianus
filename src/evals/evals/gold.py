@@ -1,6 +1,7 @@
 """Read UD treebank files into gold tokens that can be compared with index analyses."""
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -67,3 +68,80 @@ def parse_conllu(text: str, *, treebank: str) -> list[GoldToken]:
                 )
             )
     return tokens
+
+
+# The compared features and the values the UD Latin treebanks give them (ADR-003, Decision 2).
+# Aspect is kept here only because `canonicalise` folds it into Tense.
+_COMPARED_VALUES: dict[str, frozenset[str]] = {
+    "Case": frozenset({"Nom", "Gen", "Dat", "Acc", "Abl", "Voc", "Loc"}),
+    "Number": frozenset({"Sing", "Plur"}),
+    "Gender": frozenset({"Masc", "Fem", "Neut"}),
+    "Person": frozenset({"1", "2", "3"}),
+    "Mood": frozenset({"Ind", "Sub", "Imp"}),
+    "Tense": frozenset({"Pres", "Past", "Fut", "Pqp"}),
+    "Aspect": frozenset({"Imp", "Perf", "Prosp"}),
+    "Voice": frozenset({"Act", "Pass"}),
+    "VerbForm": frozenset({"Fin", "Inf", "Part", "Ger", "Gdv", "Sup"}),
+    "Degree": frozenset({"Pos", "Cmp", "Sup", "Abs"}),
+}
+
+# Lexical or derivational features that only some treebanks mark. They are dropped.
+_NOT_COMPARED: frozenset[str] = frozenset(
+    {
+        "InflClass",
+        "InflClass[nominal]",
+        "PronType",
+        "Polarity",
+        "Poss",
+        "Reflex",
+        "Person[psor]",
+        "Number[psor]",
+        "NumType",
+        "NumForm",
+        "NumValue",
+        "AdvType",
+        "AdpType",
+        "PartType",
+        "NameType",
+        "Proper",
+        "Abbr",
+        "Foreign",
+        "Form",
+        "Variant",
+        "Compound",
+        "ExtPos",
+    }
+)
+
+
+class UnknownFeatureError(ValueError):
+    """Raised when a gold feature, or a value of a compared feature, is not one we know."""
+
+    def __init__(self, feature: str, value: str) -> None:
+        self.feature = feature
+        self.value = value
+        super().__init__(f"Unknown gold feature: {feature}={value}")
+
+
+def map_features(features: Mapping[str, str]) -> dict[str, str]:
+    """Keep the compared subset of a treebank's features.
+
+    Features outside the subset are dropped, as is `Degree=Dim`. A feature that is neither
+    compared nor on the dropped list, or a value we have not seen for a compared feature,
+    raises `UnknownFeatureError`, so that a new release cannot change the scores unnoticed.
+    A multi-valued feature ("Gender=Fem,Masc") is kept whole.
+    """
+    mapped: dict[str, str] = {}
+    for feature, value in features.items():
+        if feature in _NOT_COMPARED:
+            continue
+        known = _COMPARED_VALUES.get(feature)
+        if known is None:
+            raise UnknownFeatureError(feature, value)
+        if feature == "Degree" and value == "Dim":
+            continue
+        for member in value.split(","):
+            if member not in known:
+                raise UnknownFeatureError(feature, member)
+        mapped[feature] = value
+    return mapped
