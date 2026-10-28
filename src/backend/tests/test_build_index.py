@@ -442,3 +442,49 @@ def test_report_counts_flagged_lemmas_and_main_prints_the_count(
 
     assert report.deponents == 2
     assert "deponent lemmas: 2" in capsys.readouterr().out
+
+
+# Headword lines copied from the Wiktextract dump.
+_REAL_HEADWORDS = {
+    "loquor": (
+        "loquor (present infinitive loquī or loquier, perfect active locūtus sum); "
+        "third conjugation, deponent"
+    ),
+    "sequor": (
+        "sequor (present infinitive sequī, perfect active secūtus sum or sequūtus sum); "
+        "third conjugation, deponent"
+    ),
+    "hortor": (
+        "hortor (present infinitive hortārī or hortārier, perfect active hortātus sum); "
+        "first conjugation, deponent"
+    ),
+    "morior": (
+        "morior (present infinitive morī or morīrī, perfect active mortuus sum); "
+        "third (-iō variant) / fourth conjugation, deponent, no passive"
+    ),
+    "ūtor": ("ūtor (present infinitive ūtī, perfect active ūsus sum); third conjugation, deponent"),
+    "audeō": (
+        "audeō (present infinitive audēre, perfect active ausī or ausus sum, supine ausum); "
+        "second conjugation, optionally semi-deponent"
+    ),
+}
+
+
+def test_spot_check_of_real_deponent_headword_lines(tmp_path: Path) -> None:
+    entries = [_verb(word, line) for word, line in _REAL_HEADWORDS.items()]
+    entries.append(
+        _verb("amō", "amō (present infinitive amāre, perfect active amāvī); first conjugation")
+    )
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", entries), db)
+
+    assert _deponent_flags(db) == {
+        "loquor": 1,
+        "sequor": 1,
+        "hortor": 1,
+        "morior": 1,
+        "utor": 1,
+        "audeo": 1,
+        "amo": 0,
+    }
