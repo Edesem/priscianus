@@ -1,7 +1,8 @@
 """Measure how often the morphology index agrees with the gold parses, before any model runs."""
 
+import random
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 
 from priscianus.morphology.lookup import Analysis
@@ -61,3 +62,48 @@ def breakdown(results: Iterable[tuple[Item, Agreement]], dimension: str) -> dict
         row[2] += agreement.lemma_found
         row[3] += agreement.parse_matches
     return {group: Rates(*row) for group, row in counts.items()}
+
+
+def sample_disagreements(
+    results: Sequence[tuple[Item, Agreement]], *, k: int, seed: int
+) -> list[tuple[Item, Agreement]]:
+    """Up to `k` results whose parse the index does not match, drawn repeatably."""
+    missed = [r for r in results if not r[1].parse_matches]
+    return random.Random(seed).sample(missed, min(k, len(missed)))
+
+
+_DIMENSIONS = (
+    ("Treebank", "treebank"),
+    ("POS class", "pos_class"),
+    ("Frequency band", "freq_band"),
+    ("Classical / Ecclesiastical", "slice"),
+)
+
+
+def _pct(part: int, whole: int) -> str:
+    return f"{100 * part / whole:.1f}%"
+
+
+def render_report(results: Sequence[tuple[Item, Agreement]]) -> str:
+    """Markdown tables of the agreement rates, overall and per stratum."""
+    total = Rates(
+        n=len(results),
+        in_index=sum(a.in_index for _, a in results),
+        lemma_found=sum(a.lemma_found for _, a in results),
+        parse_matches=sum(a.parse_matches for _, a in results),
+    )
+    lines = [f"Ceiling: {_pct(total.parse_matches, total.n)} of {total.n} items."]
+    for heading, dimension in _DIMENSIONS:
+        lines += [
+            "",
+            f"### {heading}",
+            "",
+            "| Group | Items | Form in index | Gold lemma found | Parse matches |",
+            "|---|---|---|---|---|",
+        ]
+        for group, rates in sorted(breakdown(results, dimension).items()):
+            lines.append(
+                f"| {group} | {rates.n} | {_pct(rates.in_index, rates.n)}"
+                f" | {_pct(rates.lemma_found, rates.n)} | {_pct(rates.parse_matches, rates.n)} |"
+            )
+    return "\n".join(lines)
