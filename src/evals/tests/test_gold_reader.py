@@ -39,6 +39,7 @@ def test_reads_a_token_with_every_field_the_issue_asks_for():
         features={"Case": "Abl", "Gender": "Masc", "Number": "Sing"},
         sentence="animo mecum ante",
         mwt_form=None,
+        source="phi0690.phi003.perseus-lat1.tb.xml",
     )
 
 
@@ -90,3 +91,43 @@ def test_read_conllu_takes_the_treebank_name_from_the_file_name(tmp_path: Path):
 
     assert {t.treebank for t in tokens} == {"perseus"}
     assert len(tokens) == 4
+
+
+PROIEL = """\
+# source = Jerome's Vulgate, Matthew 6
+# text = adtendite ne
+# sent_id = 12933
+1\tadtendite\tattendo\tVERB\tV-\tMood=Imp\t0\troot\t_\tRef=MATT_6.1
+2\tne\tne\tSCONJ\tG-\t_\t1\tmark\t_\tRef=MATT_6.1
+
+"""
+
+PERSEUS_TWO_SENTENCES = """\
+# newdoc id = phi0959.phi006.perseus-lat1.tb.xml
+# sent_id = phi0959.phi006.perseus-lat1.tb.xml@1
+# text = animo
+1\tanimo\tanimus\tNOUN\tn-s---mb-\tCase=Abl\t0\troot\t_\t_
+
+# sent_id = phi0959.phi006.perseus-lat1.tb.xml@2
+# text = ante
+1\tante\tante\tADV\td--------\t_\t0\troot\t_\t_
+
+"""
+
+
+def test_token_source_is_the_proiel_source_comment():
+    tokens = parse_conllu(PROIEL, treebank="proiel")
+
+    assert {t.source for t in tokens} == {"Jerome's Vulgate, Matthew 6"}
+
+
+def test_token_source_carries_a_perseus_newdoc_id_over_later_sentences():
+    tokens = parse_conllu(PERSEUS_TWO_SENTENCES, treebank="perseus")
+
+    assert [t.source for t in tokens] == ["phi0959.phi006.perseus-lat1.tb.xml"] * 2
+
+
+def test_token_source_is_empty_when_the_treebank_gives_none():
+    tokens = parse_conllu(ITTB, treebank="ittb")
+
+    assert {t.source for t in tokens} == {""}
