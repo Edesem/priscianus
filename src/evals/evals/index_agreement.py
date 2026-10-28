@@ -107,3 +107,10 @@ def render_report(results: Sequence[tuple[Item, Agreement]]) -> str:
                 f" | {_pct(rates.lemma_found, rates.n)} | {_pct(rates.parse_matches, rates.n)} |"
             )
     return "\n".join(lines)
+
+
+def evaluate(
+    items: Iterable[Item], lookup: Callable[[str], list[Analysis]]
+) -> list[tuple[Item, Agreement]]:
+    """Check every parse-set item against the index."""
+    return [(item, check_token(item.token, lookup)) for item in items]
