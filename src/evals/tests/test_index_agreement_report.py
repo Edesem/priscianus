@@ -7,7 +7,7 @@ ABSENT = Agreement(in_index=False, lemma_found=False, parse_matches=False)
 LEMMA_ONLY = Agreement(in_index=True, lemma_found=True, parse_matches=False)
 
 
-def item(n: int) -> Item:
+def item(n: int, pos_class: str = "noun") -> Item:
     token = GoldToken(
         treebank="perseus",
         sent_id="s",
@@ -24,7 +24,7 @@ def item(n: int) -> Item:
         token=token,
         slice="Classical",
         source="perseus",
-        pos_class="noun",
+        pos_class=pos_class,
         freq_band="top1k",
     )
 
@@ -55,3 +55,17 @@ def test_report_gives_the_ceiling_and_a_table_per_dimension():
     for heading in ("Treebank", "POS class", "Frequency band", "Classical / Ecclesiastical"):
         assert f"### {heading}" in report
     assert "| perseus | 4 | 75.0% | 75.0% | 50.0% |" in report
+
+
+def test_report_gives_a_second_ceiling_without_uninflected_words():
+    results = [
+        (item(1), FULL),
+        (item(2), ABSENT),
+        (item(3, "uninflected"), ABSENT),
+        (item(4, "uninflected"), ABSENT),
+    ]
+
+    report = render_report(results)
+
+    assert "Ceiling: 25.0% of 4 items." in report
+    assert "Ceiling on inflected classes: 50.0% of 2 items." in report

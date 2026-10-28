@@ -92,7 +92,13 @@ def render_report(results: Sequence[tuple[Item, Agreement]]) -> str:
         lemma_found=sum(a.lemma_found for _, a in results),
         parse_matches=sum(a.parse_matches for _, a in results),
     )
-    lines = [f"Ceiling: {_pct(total.parse_matches, total.n)} of {total.n} items."]
+    inflected = [a for i, a in results if i.pos_class != "uninflected"]
+    matched = sum(a.parse_matches for a in inflected)
+    lines = [
+        f"Ceiling: {_pct(total.parse_matches, total.n)} of {total.n} items.",
+        "",
+        f"Ceiling on inflected classes: {_pct(matched, len(inflected))} of {len(inflected)} items.",
+    ]
     for heading, dimension in _DIMENSIONS:
         lines += [
             "",
