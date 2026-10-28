@@ -12,7 +12,7 @@ from evals.gold import GoldToken
 
 # Stored with every response. Change it whenever SYSTEM_PROMPT, OUTPUT_SCHEMA or the user
 # message changes, so that results from different prompts are never mixed.
-PROMPT_ID = "raw-parse-v1"
+PROMPT_ID = "raw-parse-v2"
 
 UPOS_TAGS: tuple[str, ...] = (
     "ADJ",
@@ -48,6 +48,10 @@ ALLOWED_FEATURES: dict[str, tuple[str, ...]] = {
     "Degree": ("Cmp", "Sup"),
 }
 
+# Every feature is required, with "None" for one the word lacks. When all of them were
+# optional, Haiku left features out and often ended on Degree (raw-parse-v1, dev).
+NONE = "None"
+
 OUTPUT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -56,9 +60,10 @@ OUTPUT_SCHEMA: dict[str, Any] = {
         "features": {
             "type": "object",
             "properties": {
-                name: {"type": "string", "enum": list(values)}
+                name: {"type": "string", "enum": [*values, NONE]}
                 for name, values in ALLOWED_FEATURES.items()
             },
+            "required": list(ALLOWED_FEATURES),
             "additionalProperties": False,
         },
     },
@@ -78,8 +83,9 @@ sentence, and answer with a JSON object with three fields:
 
 - "lemma": the dictionary form, with macrons left out.
 - "upos": the Universal Dependencies part-of-speech tag, one of: {", ".join(UPOS_TAGS)}.
-- "features": an object of Universal Dependencies features. Use only these feature names \
-and, for each, only these values:
+- "features": an object of Universal Dependencies features. It has every one of the names \
+below. Give each one of its values, or "None" if the feature does not apply to the word. \
+Use only these values:
 {_feature_lines()}
 
 Lemma conventions:
@@ -89,7 +95,7 @@ Lemma conventions:
 - Use the nominative singular for nouns and the masculine nominative singular for adjectives.
 
 Feature conventions:
-- Give only the features that the word has. Leave out the rest; do not guess.
+- Give a value only for a feature that the word has; give "None" for the rest. Do not guess.
 - The imperfect is Tense=Past with Aspect=Imp; the perfect is Tense=Past with Aspect=Perf; \
 the pluperfect is Tense=Pqp; the future perfect is Tense=Fut with Aspect=Perf. Give Aspect \
 only for these.
@@ -171,7 +177,8 @@ def parse_claim(response: LLMResponse) -> Claim | ParseFailure:
     reason = _schema_error(data)
     if reason:
         return ParseFailure(reason)
-    return Claim(data["lemma"], data["upos"], dict(data["features"]))
+    features = {name: value for name, value in data["features"].items() if value != NONE}
+    return Claim(data["lemma"], data["upos"], features)
 
 
 def _schema_error(data: Any) -> str | None:
@@ -189,6 +196,9 @@ def _schema_error(data: Any) -> str | None:
     for name, value in features.items():
         if name not in ALLOWED_FEATURES:
             return f"unknown feature {name!r}"
-        if value not in ALLOWED_FEATURES[name]:
+        if value != NONE and value not in ALLOWED_FEATURES[name]:
             return f"{name}={value!r} is not an allowed value"
+    missing = [name for name in ALLOWED_FEATURES if name not in features]
+    if missing:
+        return f"features are missing {', '.join(missing)}"
     return None

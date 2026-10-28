@@ -37,6 +37,11 @@ def tokens():
     return parse_conllu(CONLLU, treebank="perseus")
 
 
+def features(**given: str) -> dict[str, str]:
+    """A full feature object, as the schema requires: every feature, "None" where unused."""
+    return {name: given.get(name, "None") for name in ALLOWED_FEATURES}
+
+
 def response(text: str) -> LLMResponse:
     return LLMResponse([{"type": "text", "text": text}], "end_turn", Usage())
 
@@ -97,11 +102,23 @@ def test_schema_limits_features_to_the_allowed_names_and_values():
         "Abl",
         "Voc",
         "Loc",
+        "None",
     ]
+
+
+def test_schema_requires_every_feature_so_the_model_cannot_stop_early():
+    schema = OUTPUT_SCHEMA["properties"]["features"]
+    assert schema["required"] == list(ALLOWED_FEATURES)
+    for name in ALLOWED_FEATURES:
+        assert "None" in schema["properties"][name]["enum"]
 
 
 def test_schema_requires_lemma_upos_and_features():
     assert OUTPUT_SCHEMA["required"] == ["lemma", "upos", "features"]
+
+
+def test_system_prompt_explains_none():
+    assert '"None"' in SYSTEM_PROMPT
 
 
 def test_system_prompt_lists_every_allowed_value():
@@ -116,8 +133,22 @@ def test_prompt_id_is_versioned():
 
 
 def test_parses_a_valid_response():
-    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": {"Person": "1"}})
+    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Person="1")})
     assert parse_claim(response(text)) == Claim("cano", "VERB", {"Person": "1"})
+
+
+def test_none_means_the_feature_is_left_out_of_the_claim():
+    text = json.dumps({"lemma": "et", "upos": "CCONJ", "features": features()})
+    assert parse_claim(response(text)) == Claim("et", "CCONJ", {})
+
+
+def test_a_response_that_leaves_a_feature_out_is_a_failure():
+    partial = features()
+    del partial["Degree"]
+    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": partial})
+    result = parse_claim(response(text))
+    assert isinstance(result, ParseFailure)
+    assert "Degree" in result.reason
 
 
 def test_invalid_json_is_a_failure_not_an_exception():
@@ -127,19 +158,21 @@ def test_invalid_json_is_a_failure_not_an_exception():
 
 
 def test_an_invented_feature_name_is_a_failure():
-    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": {"Flavour": "Sweet"}})
+    text = json.dumps(
+        {"lemma": "cano", "upos": "VERB", "features": {**features(), "Flavour": "Sweet"}}
+    )
     result = parse_claim(response(text))
     assert isinstance(result, ParseFailure)
     assert "Flavour" in result.reason
 
 
 def test_a_value_outside_the_allowed_list_is_a_failure():
-    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": {"Case": "Nominative"}})
+    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Case="Nominative")})
     assert isinstance(parse_claim(response(text)), ParseFailure)
 
 
 def test_an_unknown_upos_is_a_failure():
-    text = json.dumps({"lemma": "cano", "upos": "VERBISH", "features": {}})
+    text = json.dumps({"lemma": "cano", "upos": "VERBISH", "features": features()})
     assert isinstance(parse_claim(response(text)), ParseFailure)
 
 
@@ -148,7 +181,7 @@ def test_a_missing_field_is_a_failure():
 
 
 def test_an_empty_lemma_is_a_failure():
-    text = json.dumps({"lemma": "", "upos": "VERB", "features": {}})
+    text = json.dumps({"lemma": "", "upos": "VERB", "features": features()})
     assert isinstance(parse_claim(response(text)), ParseFailure)
 
 
