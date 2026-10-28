@@ -176,3 +176,19 @@ def test_voice_is_compared_on_other_verbs():
     token = gold("amo", "VERB", {"Mood": "Ind", "Voice": "Pass"})
 
     assert not matches(token, analysis("amo", "verb", {"Mood": "Ind", "Voice": "Act"}))
+
+
+def test_person_is_not_compared_on_pronouns_the_index_does_not_mark():
+    token = gold("is", "PRON", {"Case": "Acc", "Gender": "Fem", "Number": "Sing", "Person": "3"})
+
+    assert matches(
+        token, analysis("is", "pron", {"Case": "Acc", "Gender": "Fem", "Number": "Sing"})
+    )
+
+
+def test_person_is_still_compared_on_verbs():
+    token = gold("amo", "VERB", {"Person": "1", "Number": "Sing", "VerbForm": "Fin"})
+
+    assert not matches(
+        token, analysis("amo", "verb", {"Person": "2", "Number": "Sing", "VerbForm": "Fin"})
+    )

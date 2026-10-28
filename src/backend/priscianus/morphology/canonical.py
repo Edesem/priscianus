@@ -42,13 +42,18 @@ def canonicalise(features: Mapping[str, str]) -> dict[str, str]:
     return result
 
 
-def relax(features: Mapping[str, str], *, noun: bool, deponent: bool) -> dict[str, str]:
+def relax(
+    features: Mapping[str, str], *, noun: bool, deponent: bool, pronoun: bool = False
+) -> dict[str, str]:
     """Drop what a comparison with the index cannot check (ADR-002, ADR-003).
 
     Index noun forms carry no gender, since it belongs to the lemma. The index tags
-    every form of a deponent Voice=Act, where other sources say passive.
+    every form of a deponent Voice=Act, where other sources say passive. Nor do index
+    pronoun forms carry person, which the gold marks (*ego* 1, *tu* 2, *is* 3).
     """
     dropped = {"Gender"} if noun else set()
+    if pronoun:
+        dropped.add("Person")
     if deponent:
         dropped.add("Voice")
     return {name: value for name, value in features.items() if name not in dropped}
