@@ -1,6 +1,6 @@
 """Build, freeze and load the gold parse set (ADR-003, Decisions 3 to 5)."""
 
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 
 from evals.gold import GoldToken, lemma_keys
@@ -71,7 +71,7 @@ def frequency_ranks(treebanks: Mapping[str, Sequence[GoldToken]]) -> dict[str, i
     Lemmas are keyed by their loose key, and the words that cannot be sampled are not counted.
     Ties are ranked alphabetically.
     """
-    totals: Counter[str] = Counter()
+    totals: defaultdict[str, float] = defaultdict(float)
     for tokens in treebanks.values():
         counts = Counter(min(lemma_keys(t.lemma)) for t in tokens if is_candidate(t))
         size = sum(counts.values())
