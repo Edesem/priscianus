@@ -172,10 +172,22 @@ def lemma_keys(lemma: str) -> frozenset[str]:
     return frozenset(key_loose("".join(chosen)) for chosen in product(*choices))
 
 
+def lemma_agrees(gold_lemma: str, analysis: Analysis) -> bool:
+    """Whether the analysis's lemma, or the lemma it is a form of, is the gold lemma.
+
+    The treebanks lemmatise a participle, gerund or supine as its verb and a comparative as
+    its positive (ADR-003, Decision 2), so an analysis of *pauens* agrees with *paveo*.
+    """
+    names = {key_loose(analysis.lemma)}
+    if analysis.base_lemma is not None:
+        names.add(analysis.base_lemma)
+    return not names.isdisjoint(lemma_keys(gold_lemma))
+
+
 def matches(gold: GoldToken, analysis: Analysis) -> bool:
     """Whether an index analysis agrees with a gold parse.
 
-    The lemmas must have the same loose key, and every compared feature the gold marks
+    The lemmas must agree (see `lemma_agrees`), and every compared feature the gold marks
     must be in the analysis (any member of a multi-valued gold feature will do). Features
     the gold leaves out are not held against the analysis. Both sides are in canonical form
     and the ADR-002 and spot-check relaxations are applied: gender is not compared on
@@ -184,7 +196,7 @@ def matches(gold: GoldToken, analysis: Analysis) -> bool:
 
     Raises UnknownFeatureError for a gold feature we have no mapping for.
     """
-    if key_loose(analysis.lemma) not in lemma_keys(gold.lemma):
+    if not lemma_agrees(gold.lemma, analysis):
         return False
     expected = relax(
         canonicalise(map_features(gold.features)),

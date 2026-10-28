@@ -96,7 +96,7 @@ def test_meta_records_schema_version_dump_date_and_build_hash(tmp_path: Path) ->
     build_index(dump, db)
 
     meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
-    assert meta["schema_version"] == "2"
+    assert meta["schema_version"] == "3"
     assert meta["dump_date"] == "Wed, 21 Oct 2026 13:51:28 GMT"
     assert len(meta["build_hash"]) == 64
 
