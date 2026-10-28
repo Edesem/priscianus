@@ -51,9 +51,19 @@ EDO = {
 }
 
 
+LOQUOR = {
+    "word": "loquor",
+    "pos": "verb",
+    "head_templates": [
+        {"expansion": "loquor (perfect active locūtus sum); third conjugation, deponent"}
+    ],
+    "forms": [_form("loquitur", "third-person", "singular", "present", "active", "indicative")],
+}
+
+
 @pytest.fixture
 def db(tmp_path: Path) -> Path:
-    entries = [AMOR_NOUN, AMO_VERB, ROSA, SUM, EDO, VITA]
+    entries = [AMOR_NOUN, AMO_VERB, ROSA, SUM, EDO, VITA, LOQUOR]
     dump = tmp_path / "dump.jsonl"
     dump.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
     path = tmp_path / "morphology.db"
@@ -111,3 +121,16 @@ def test_est_is_both_sum_and_edo(db: Path) -> None:
 
     assert sorted(a.lemma for a in analyses) == ["edo", "sum"]
     assert all(a.features["Person"] == "3" and a.features["Tense"] == "Pres" for a in analyses)
+
+
+def test_analysis_of_a_deponent_lemma_is_flagged(db: Path) -> None:
+    [analysis] = lookup_form("loquitur", db)
+
+    assert analysis.deponent is True
+    assert analysis.features["Voice"] == "Act"
+
+
+def test_analysis_of_an_ordinary_verb_is_not_flagged(db: Path) -> None:
+    analyses = lookup_form("amo", db)
+
+    assert [a.deponent for a in analyses] == [False]
