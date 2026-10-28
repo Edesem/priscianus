@@ -5,6 +5,7 @@ import pytest
 
 from priscianus.morphology.build_index import build_index
 from priscianus.morphology.lookup import Analysis, lookup_form
+from priscianus.morphology.normaliser import key_loose
 
 
 def _form(form: str, *tags: str) -> dict[str, object]:
@@ -174,6 +175,6 @@ def test_participle_and_comparative_analyses_name_their_base_lemma(tmp_path: Pat
     [maiores] = lookup_form("maiores", db)
     [rosae, *_] = lookup_form("rosae", db)
 
-    assert paventes.base_lemma == "paveo"
+    assert paventes.base_lemma == key_loose("paveo")
     assert maiores.base_lemma == "magnus"
     assert rosae.base_lemma is None
