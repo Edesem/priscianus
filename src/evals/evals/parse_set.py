@@ -1,6 +1,9 @@
 """Build, freeze and load the gold parse set (ADR-003, Decisions 3 to 5)."""
 
-from evals.gold import GoldToken
+from collections import Counter
+from collections.abc import Mapping, Sequence
+
+from evals.gold import GoldToken, lemma_keys
 
 _POS_CLASSES: dict[str, str] = {
     "VERB": "verb",
@@ -58,3 +61,34 @@ def slice_of(token: GoldToken) -> str | None:
         if token.source.startswith(work):
             return slice_name
     raise ValueError(f"Unknown PROIEL work: {token.source!r}")
+
+
+def frequency_ranks(treebanks: Mapping[str, Sequence[GoldToken]]) -> dict[str, int]:
+    """Rank lemmas by their frequency in the train splits, 1 being the most frequent.
+
+    Each treebank's counts become relative frequencies, which are averaged over the
+    treebanks, so that the largest treebank does not decide the ranking (ADR-003, Decision 3).
+    Lemmas are keyed by their loose key, and the words that cannot be sampled are not counted.
+    Ties are ranked alphabetically.
+    """
+    totals: Counter[str] = Counter()
+    for tokens in treebanks.values():
+        counts = Counter(min(lemma_keys(t.lemma)) for t in tokens if is_candidate(t))
+        size = sum(counts.values())
+        for key, count in counts.items():
+            totals[key] += count / size / len(treebanks)
+    ordered = sorted(totals, key=lambda key: (-totals[key], key))
+    return {key: rank for rank, key in enumerate(ordered, start=1)}
+
+
+def band_for_rank(rank: int | None) -> str:
+    """The frequency band of a lemma rank; a lemma not seen in the train splits is rare."""
+    if rank is None or rank > 10_000:
+        return "rare"
+    return "top1k" if rank <= 1_000 else "1k-10k"
+
+
+def rank_of(ranks: Mapping[str, int], lemma: str) -> int | None:
+    """A gold lemma's rank, the best one over the spellings its brackets allow."""
+    found = [ranks[key] for key in lemma_keys(lemma) if key in ranks]
+    return min(found) if found else None
