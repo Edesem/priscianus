@@ -6,9 +6,8 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 
 from priscianus.morphology.lookup import Analysis
-from priscianus.morphology.normaliser import key_loose
 
-from evals.gold import GoldToken, lemma_keys, matches
+from evals.gold import GoldToken, lemma_agrees, matches
 from evals.parse_set import Item
 
 
@@ -24,10 +23,9 @@ class Agreement:
 def check_token(token: GoldToken, lookup: Callable[[str], list[Analysis]]) -> Agreement:
     """Whether the index has the form, the gold lemma for it, and an analysis that `matches`."""
     analyses = lookup(token.form)
-    keys = lemma_keys(token.lemma)
     return Agreement(
         in_index=bool(analyses),
-        lemma_found=any(key_loose(a.lemma) in keys for a in analyses),
+        lemma_found=any(lemma_agrees(token.lemma, a) for a in analyses),
         parse_matches=any(matches(token, a) for a in analyses),
     )
 
