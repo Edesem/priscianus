@@ -1,11 +1,15 @@
 """Build, freeze and load the gold parse set (ADR-003, Decisions 3 to 5)."""
 
+import hashlib
+import json
 import random
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import Any
 
-from evals.gold import GoldToken, lemma_keys
+from evals.gold import GoldToken, lemma_keys, read_conllu
 
 _POS_CLASSES: dict[str, str] = {
     "VERB": "verb",
@@ -257,3 +261,140 @@ def _draw(pool: list[Item], n: int, used: set[tuple[str, str]], *, balanced: boo
             take([item for item in pool if item.token.treebank == group], share)
     take(pool, n - len(drawn))
     return drawn
+
+
+class ManifestExistsError(FileExistsError):
+    """Raised when a build would overwrite a committed manifest (ADR-003, Decision 4)."""
+
+
+class ManifestMismatchError(ValueError):
+    """Raised when the treebank files do not match the manifest, e.g. a different UD release."""
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _file_name(treebank: str) -> str:
+    return f"la_{treebank}-ud-test.conllu"
+
+
+def write_manifest(
+    sample: Sample,
+    *,
+    version: str,
+    seed: int,
+    sizes: Mapping[str, int],
+    ud_dir: Path,
+    out_dir: Path,
+    release: str,
+) -> Path:
+    """Write `parse-<version>.jsonl` and `parse-<version>.meta.json` and return the first.
+
+    The rows hold IDs, strata and hashes of the form and the sentence, and no treebank text
+    (ADR-003, Decision 5). Raises `ManifestExistsError` rather than overwrite a manifest.
+    """
+    manifest = out_dir / f"parse-{version}.jsonl"
+    meta = out_dir / f"parse-{version}.meta.json"
+    if manifest.exists() or meta.exists():
+        number = int(version.lstrip("v")) + 1 if version.lstrip("v").isdigit() else "N"
+        raise ManifestExistsError(
+            f"{manifest} is frozen; a change makes a new version (parse-v{number})"
+        )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rows: list[dict[str, Any]] = [
+        {
+            "item_id": f"{i.token.treebank}/{i.token.sent_id}/{i.token.token_id}",
+            "split": i.split,
+            "treebank": i.token.treebank,
+            "ud_release": release,
+            "file": _file_name(i.token.treebank),
+            "sent_id": i.token.sent_id,
+            "word_id": i.token.token_id,
+            "slice": i.slice,
+            "source": i.source,
+            "pos_class": i.pos_class,
+            "freq_band": i.freq_band,
+            "form_sha256": _sha256(i.token.form),
+            "sentence_sha256": _sha256(i.token.sentence),
+        }
+        for i in sample.items
+    ]
+    manifest.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    files = sorted({row["file"] for row in rows})
+    meta.write_text(
+        json.dumps(
+            {
+                "version": version,
+                "seed": seed,
+                "sizes": dict(sizes),
+                "ud_release": release,
+                "item_count": len(rows),
+                "file_sha256": {
+                    name: hashlib.sha256((ud_dir / name).read_bytes()).hexdigest() for name in files
+                },
+                "candidate_counts": sample.candidate_counts,
+                "shortfalls": sample.shortfalls,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return manifest
+
+
+def load_parse_set(manifest: Path, ud_dir: Path) -> list[Item]:
+    """Resolve a manifest against the downloaded treebanks.
+
+    Raises `ManifestMismatchError` if a file is missing, an item is not in its file, or the
+    form or sentence differs from the hash in the manifest, which means a different UD release.
+    """
+    rows = [json.loads(line) for line in manifest.read_text(encoding="utf-8").splitlines()]
+    words: dict[str, dict[tuple[str, int], GoldToken]] = {}
+    items: list[Item] = []
+    for row in rows:
+        name = row["file"]
+        if name not in words:
+            path = ud_dir / name
+            if not path.exists():
+                raise ManifestMismatchError(f"{path} is missing; run `make eval-data`")
+            words[name] = {(t.sent_id, t.token_id): t for t in read_conllu(path)}
+        token = words[name].get((row["sent_id"], row["word_id"]))
+        if token is None:
+            raise ManifestMismatchError(
+                f"{row['item_id']} is not in {name} ({row['ud_release']} expected)"
+            )
+        for field, text in (("form", token.form), ("sentence", token.sentence)):
+            if _sha256(text) != row[f"{field}_sha256"]:
+                raise ManifestMismatchError(
+                    f"{row['item_id']}: the {field} differs from the manifest; "
+                    f"is {name} from UD {row['ud_release']}?"
+                )
+        items.append(
+            Item(
+                row["split"], token, row["slice"], row["source"], row["pos_class"], row["freq_band"]
+            )
+        )
+    return items
+
+
+def summary_table(items: Sequence[Item]) -> str:
+    """A markdown table of item counts per slice, class and band, by split."""
+    classes = list(_CLASS_SHARES)
+    bands = list(_BAND_SHARES)
+    counts: Counter[tuple[str, str, str, str]] = Counter(
+        (i.slice, i.pos_class, i.freq_band if i.pos_class in _OPEN_CLASSES else "all", i.split)
+        for i in items
+    )
+    keys = sorted(
+        {k[:3] for k in counts},
+        key=lambda k: (k[0], classes.index(k[1]), bands.index(k[2]) if k[2] in bands else 0),
+    )
+    lines = ["| Slice | Class | Band | Test | Dev |", "|---|---|---|---|---|"]
+    for key in keys:
+        lines.append(f"| {' | '.join(key)} | {counts[(*key, 'test')]} | {counts[(*key, 'dev')]} |")
+    test = sum(n for k, n in counts.items() if k[3] == "test")
+    dev = sum(n for k, n in counts.items() if k[3] == "dev")
+    lines.append(f"| **Total** | | | {test} | {dev} |")
+    return "\n".join(lines)
