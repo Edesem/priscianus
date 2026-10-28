@@ -21,16 +21,19 @@ Code is MIT (see `LICENSE`). Data is licensed separately.
 ### Universal Dependencies Latin treebanks
 
 - Release r2.18, from the `UniversalDependencies/UD_Latin-*` repositories. The parse set uses the test splits of Perseus, PROIEL and ITTB; frequency bands use the train splits of all six (see [ADR-003](docs/adr/ADR-003.md)).
-- Downloaded into `src/data/raw/`; never committed. The parse set is committed only as a manifest of sentence and word IDs (`src/data/eval_sets/`), with no treebank text.
+- Fetched by `make eval-data` (`src/data/scripts/download_ud_latin.py`) into `src/data/raw/ud/`; never committed. The script downloads from the `r2.18` tags and checks the size and SHA-256 of every file against values pinned in the script, skipping files already present and valid.
+- The parse set is committed only as a manifest of sentence and word IDs (`src/data/eval_sets/`), with no treebank text.
+- Treebanks marked non-commercial must stay out of paid offerings, and out of any published artefact that contains their text.
+- Attribution: cite the treebank's own papers (listed in each repository's README) and Universal Dependencies (Zeman et al.).
 
-| Treebank | Licence |
-|---|---|
-| Perseus | CC BY-NC-SA 2.5 |
-| PROIEL | CC BY-NC-SA 4.0 |
-| ITTB | CC BY-NC-SA 3.0 |
-| LLCT | CC BY-SA 4.0 |
-| UDante | CC BY-SA 4.0 |
-| CIRCSE | CC BY-SA 4.0 |
+| Treebank | URL | Licence | Non-commercial |
+|---|---|---|---|
+| Perseus | <https://github.com/UniversalDependencies/UD_Latin-Perseus> | CC BY-NC-SA 2.5 | Yes |
+| PROIEL | <https://github.com/UniversalDependencies/UD_Latin-PROIEL> | CC BY-NC-SA 4.0 | Yes |
+| ITTB | <https://github.com/UniversalDependencies/UD_Latin-ITTB> | CC BY-NC-SA 3.0 | Yes |
+| LLCT | <https://github.com/UniversalDependencies/UD_Latin-LLCT> | CC BY-SA 4.0 | No |
+| UDante | <https://github.com/UniversalDependencies/UD_Latin-UDante> | CC BY-SA 4.0 | No |
+| CIRCSE | <https://github.com/UniversalDependencies/UD_Latin-CIRCSE> | CC BY-SA 4.0 | No |
 
 ### Built morphology database
 

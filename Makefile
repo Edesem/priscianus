@@ -1,4 +1,4 @@
-.PHONY: help setup dev backend frontend build test test-backend test-frontend lint format clean data eval-smoke
+.PHONY: help setup dev backend frontend build test test-backend test-frontend lint format clean data eval-data eval-smoke
 .DEFAULT_GOAL := help
 
 BACKEND_PORT ?= 8000
@@ -47,6 +47,9 @@ clean: ## Remove caches and build output
 data: ## Download raw data into src/data/raw/, then build src/data/morphology.db
 	cd src/backend && uv run python ../data/scripts/download_wiktextract.py
 	cd src/backend && uv run python -m priscianus.morphology.build_index
+
+eval-data: ## Download the UD Latin treebanks (pinned r2.18) into src/data/raw/ud/
+	cd src/backend && uv run python ../data/scripts/download_ud_latin.py
 
 eval-smoke: ## Run the eval smoke test (not yet implemented)
 	@echo "Eval smoke test arrives in Milestone 3."
