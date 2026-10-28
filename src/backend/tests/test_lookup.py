@@ -134,3 +134,46 @@ def test_analysis_of_an_ordinary_verb_is_not_flagged(db: Path) -> None:
     analyses = lookup_form("amo", db)
 
     assert [a.deponent for a in analyses] == [False]
+
+
+PAVENS = {
+    "word": "pavēns",
+    "pos": "verb",
+    "senses": [
+        {
+            "glosses": ["fearing"],
+            "tags": ["active", "form-of", "participle", "present"],
+            "form_of": [{"word": "paveō"}],
+        }
+    ],
+    "forms": [_form("paventes", "accusative", "plural", "masculine")],
+}
+MAIOR = {
+    "word": "maior",
+    "pos": "adj",
+    "senses": [
+        {
+            "glosses": ["greater"],
+            "tags": ["comparative", "form-of"],
+            "form_of": [{"word": "magnus"}],
+        }
+    ],
+    "forms": [_form("maiores", "nominative", "plural", "feminine")],
+}
+
+
+def test_participle_and_comparative_analyses_name_their_base_lemma(tmp_path: Path) -> None:
+    db = tmp_path / "morphology.db"
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text(
+        "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in [PAVENS, MAIOR, ROSA])
+    )
+    build_index(dump, db)
+
+    [paventes] = lookup_form("paventes", db)
+    [maiores] = lookup_form("maiores", db)
+    [rosae, *_] = lookup_form("rosae", db)
+
+    assert paventes.base_lemma == "paveo"
+    assert maiores.base_lemma == "magnus"
+    assert rosae.base_lemma is None

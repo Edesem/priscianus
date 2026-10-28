@@ -18,8 +18,17 @@ def gold(form: str, lemma: str, upos: str, features: dict[str, str]) -> GoldToke
     )
 
 
-def analysis(lemma: str, pos: str, features: dict[str, str]) -> Analysis:
-    return Analysis(lemma=lemma, lemma_display=lemma, pos=pos, form="x", features=features)
+def analysis(
+    lemma: str, pos: str, features: dict[str, str], base_lemma: str | None = None
+) -> Analysis:
+    return Analysis(
+        lemma=lemma,
+        lemma_display=lemma,
+        pos=pos,
+        form="x",
+        features=features,
+        base_lemma=base_lemma,
+    )
 
 
 def test_form_absent_from_index_is_a_gap_at_every_level():
@@ -54,4 +63,13 @@ def test_matching_analysis_agrees_at_every_level():
 
     assert check_token(token, lambda form: found) == Agreement(
         in_index=True, lemma_found=True, parse_matches=True
+    )
+
+
+def test_participle_linked_to_its_verb_agrees_at_the_lemma_level():
+    token = gold("paventes", "paveo", "VERB", {"Case": "Acc", "VerbForm": "Part", "Tense": "Pres"})
+    found = [analysis("pavens", "verb", {"Case": "Acc", "VerbForm": "Part"}, base_lemma="paveo")]
+
+    assert check_token(token, lambda form: found) == Agreement(
+        in_index=True, lemma_found=True, parse_matches=False
     )
