@@ -3,13 +3,12 @@
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
-from itertools import product
 from pathlib import Path
 
 import conllu
-from priscianus.morphology.canonical import canonicalise, relax
+from priscianus.morphology.canonical import canonicalise
 from priscianus.morphology.lookup import Analysis
-from priscianus.morphology.normaliser import key_loose
+from priscianus.verifier.matching import features_agree, lemma_agrees
 
 
 @dataclass(frozen=True)
@@ -158,32 +157,6 @@ def map_features(features: Mapping[str, str]) -> dict[str, str]:
     return mapped
 
 
-def lemma_keys(lemma: str) -> frozenset[str]:
-    """The loose keys a gold lemma may match, after the treebanks' lemma quirks.
-
-    Perseus has a stray comma (*uterque,*). PROIEL puts optional letters in brackets
-    (*dext(e)ra*, *(h)arena*), so the lemma may be spelt with or without them. A homograph
-    number (*sum1*) is not part of the lemma.
-    """
-    cleaned = re.sub(r"\d+$", "", lemma.strip().rstrip(",;:."))
-    parts = re.split(r"\(([^)]*)\)", cleaned)
-    # Odd items are the bracketed letters; each is either left out or kept.
-    choices = [("", part) if i % 2 else (part,) for i, part in enumerate(parts)]
-    return frozenset(key_loose("".join(chosen)) for chosen in product(*choices))
-
-
-def lemma_agrees(gold_lemma: str, analysis: Analysis) -> bool:
-    """Whether the analysis's lemma, or the lemma it is a form of, is the gold lemma.
-
-    The treebanks lemmatise a participle, gerund or supine as its verb and a comparative as
-    its positive (ADR-003, Decision 2), so an analysis of *pauens* agrees with *paveo*.
-    """
-    names = {key_loose(analysis.lemma)}
-    if analysis.base_lemma is not None:
-        names.add(analysis.base_lemma)
-    return not names.isdisjoint(lemma_keys(gold_lemma))
-
-
 def matches(gold: GoldToken, analysis: Analysis) -> bool:
     """Whether an index analysis agrees with a gold parse.
 
@@ -196,13 +169,9 @@ def matches(gold: GoldToken, analysis: Analysis) -> bool:
 
     Raises UnknownFeatureError for a gold feature we have no mapping for.
     """
-    if not lemma_agrees(gold.lemma, analysis):
-        return False
-    expected = relax(
+    return lemma_agrees(gold.lemma, analysis) and features_agree(
         canonicalise(map_features(gold.features)),
+        analysis,
         noun=gold.upos in ("NOUN", "PROPN"),
-        deponent=analysis.deponent,
         pronoun=gold.upos in ("PRON", "DET"),
     )
-    actual = canonicalise(analysis.features)
-    return all(actual.get(name) in value.split(",") for name, value in expected.items())
