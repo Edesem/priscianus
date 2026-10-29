@@ -143,3 +143,45 @@ def test_round_trip_inflect_reproduces_every_indexed_form(db: Path) -> None:
 def test_unknown_feature_name_is_a_caller_error(db: Path) -> None:
     with pytest.raises(ValueError, match="Mode"):
         inflect("rosa", {"Mode": "Ind"}, db=db)
+
+
+AFFIRMO = {
+    "word": "affirmō",
+    "pos": "verb",
+    "forms": [_form("affirmat", "third-person", "singular", "present", "active", "indicative")],
+}
+ADFIRMO = {
+    "word": "adfirmō",
+    "pos": "verb",
+    "forms": [_form("adfirmat", "third-person", "singular", "present", "active", "indicative")],
+}
+
+
+def _db(tmp_path: Path, *entries: dict[str, object]) -> Path:
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
+    path = tmp_path / "morphology.db"
+    build_index(dump, path)
+    return path
+
+
+def test_inflect_falls_back_to_the_assimilated_lemma_spelling(tmp_path: Path) -> None:
+    db = _db(tmp_path, AFFIRMO)
+
+    assert inflect("adfirmo", {"Person": "3"}, db=db) == ["affirmat"]
+    assert inflect("adfirmō", {"Person": "3"}, db=db) == ["affirmat"]
+
+
+def test_inflect_prefers_the_exact_lemma_spelling(tmp_path: Path) -> None:
+    db = _db(tmp_path, AFFIRMO, ADFIRMO)
+
+    assert inflect("adfirmo", {"Person": "3"}, db=db) == ["adfirmat"]
+
+
+def test_inflect_does_not_slide_to_a_variant_when_the_exact_lemma_lacks_the_form(
+    tmp_path: Path,
+) -> None:
+    db = _db(tmp_path, AFFIRMO, ADFIRMO)
+
+    with pytest.raises(NoSuchFormError):
+        inflect("adfirmo", {"Person": "1"}, db=db)

@@ -5,6 +5,7 @@ import re
 from collections.abc import Mapping
 from itertools import product
 
+from priscianus.morphology.assimilation import variant_keys
 from priscianus.morphology.canonical import canonicalise, relax
 from priscianus.morphology.lookup import Analysis
 from priscianus.morphology.normaliser import key_loose
@@ -14,6 +15,15 @@ PRONOUN_POS = frozenset({"pron", "det"})
 
 
 def lemma_keys(lemma: str) -> frozenset[str]:
+    """The loose keys a lemma may match, with the assimilation variants of each (#58).
+
+    *adfirmo* also matches *affirmo*. See `exact_lemma_keys` for the spellings without them.
+    """
+    exact = exact_lemma_keys(lemma)
+    return exact.union(*(variant_keys(key) for key in exact))
+
+
+def exact_lemma_keys(lemma: str) -> frozenset[str]:
     """The loose keys a gold lemma may match, after the treebanks' lemma quirks.
 
     Perseus has a stray comma (*uterque,*). PROIEL puts optional letters in brackets
@@ -33,10 +43,23 @@ def lemma_agrees(claimed_lemma: str, analysis: Analysis) -> bool:
     The treebanks lemmatise a participle, gerund or supine as its verb and a comparative as
     its positive (ADR-003, Decision 2), so an analysis of *pauens* agrees with *paveo*.
     """
+    return not _names(analysis).isdisjoint(lemma_keys(claimed_lemma))
+
+
+def uses_variant(claimed_lemma: str, analysis: Analysis) -> bool:
+    """Whether the analysis agrees with the claimed lemma only through a variant spelling.
+
+    That is, the analysis was found under a variant of the form, or the lemma is spelt
+    differently (*adfirmo* for *affirmo*). Callers report these apart from exact agreement.
+    """
+    return analysis.variant or _names(analysis).isdisjoint(exact_lemma_keys(claimed_lemma))
+
+
+def _names(analysis: Analysis) -> set[str]:
     names = {key_loose(analysis.lemma)}
     if analysis.base_lemma is not None:
         names.add(analysis.base_lemma)
-    return not names.isdisjoint(lemma_keys(claimed_lemma))
+    return names
 
 
 def compared_features(

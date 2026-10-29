@@ -66,3 +66,13 @@ def test_a_gold_lemma_takes_its_best_rank_over_the_spellings_it_may_have():
 
     assert rank_of(ranks, "dext(e)ra") == 3
     assert rank_of(ranks, "ignotus") is None
+
+
+def test_assimilation_variants_keep_their_own_ranks():
+    """The frozen parse-v1 bands must not change when the lookup learns spelling variants (#58)."""
+    tokens = [word("affirmo")] * 3 + [word("adfirmo")]
+
+    ranks = frequency_ranks({"perseus": tokens})
+
+    assert ranks == {"affirmo": 1, "adfirmo": 2}
+    assert rank_of(ranks, "adfirmo") == 2

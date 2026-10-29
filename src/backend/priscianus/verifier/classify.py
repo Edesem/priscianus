@@ -14,6 +14,7 @@ from priscianus.verifier.matching import (
     features_agree,
     lemma_agrees,
     lemma_keys,
+    uses_variant,
 )
 
 
@@ -35,11 +36,16 @@ class Claim:
 
 @dataclass(frozen=True)
 class Classification:
-    """The verdict, the readings that match the claim and the form's other readings."""
+    """The verdict, the readings that match the claim and the form's other readings.
+
+    `variant` is true if the claim matched only through a variant spelling of the form or
+    the lemma (*adfirmo* for *affirmo*), so that reports can count it apart from an exact match.
+    """
 
     verdict: Verdict
     matching: tuple[Analysis, ...] = ()
     others: tuple[Analysis, ...] = ()
+    variant: bool = False
 
 
 def classify(claim: Claim, index: MorphologyIndex) -> Classification:
@@ -54,7 +60,12 @@ def classify(claim: Claim, index: MorphologyIndex) -> Classification:
     matching = tuple(a for a in readings if _matches(claim, a))
     others = tuple(a for a in readings if a not in matching)
     if matching:
-        return Classification(Verdict.AMBIGUOUS if others else Verdict.VERIFIED, matching, others)
+        return Classification(
+            Verdict.AMBIGUOUS if others else Verdict.VERIFIED,
+            matching,
+            others,
+            variant=all(uses_variant(claim.lemma, a) for a in matching),
+        )
     if any(index.has_lemma(key) for key in lemma_keys(claim.lemma)):
         return Classification(Verdict.CONTRADICTED, others=others)
     return Classification(Verdict.UNKNOWN, others=others)

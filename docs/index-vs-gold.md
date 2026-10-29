@@ -71,9 +71,22 @@ The 16 index gaps (*praeaccipit*, *nuntiarint*, *complacentiam*, *ringentem*, *c
 
 - **Syncopated perfects (*nuntiarint*, *custodistis*): closed.** Wiktionary's tables list *nuntiāvērunt* and *custōdīvistis* but not the shortened spellings. The build now adds the syncopated spelling of every active finite perfect whose stem ends in *-āv-* or *-īv-* (`morphology/syncope.py`): 15,433 analyses, marked `source = 'syncopation'`. It moved the ceiling from 75.2% to 75.4% (about three items of 1,300) and the inflected ceiling from 83.6% to 83.8%. The gain is small because few syncopated perfects occur in the sample.
 - **Rare lemmas: accepted as gaps.** The dump has no entry for *praeaccipio*, and *complacentia* has an entry without an inflection table, so there is nothing to derive a form from. *ringor* is indexed; its gap is the participle *ringentem*, which Wiktionary links to the verb only through a form-of entry that the build does not follow. Adding these would need a second lemma source with its own licence (`DATA_LICENCES.md`) and upkeep, for words the product rarely meets. They keep the rare band at 85.3% in the index and 68.3% parse-matching; read the rare-band baseline against that ceiling, not against 100%.
-- **Assimilation spellings (*inpiger*, *adfirmo*): not changed here.** ADR-003 keeps spelling variants distinct. Whether to fold them is #58.
+- **Assimilation spellings (*inpiger*, *adfirmo*): see "After #58" below.**
 
 The sample above was classified before this change and is not redrawn.
+
+## After #58
+
+ADR-003 now records a lookup-time fallback for assimilation spellings (*adfirmo*/*affirmo*, *inpiger*/*impiger*), with no change to the index. `evals index-agreement` was re-run on all 1,300 items:
+
+| | Items matched | All items | Inflected items |
+|---|---|---|---|
+| Before #58 (main) | 1,037 | 79.8% | 88.6% |
+| With the fallback | 1,044 | **80.3%** | **89.2%** |
+
+Seven items match only through the fallback. The earlier figure in this document (75.4%) was out of date before this change: main already gave 79.8%. That rise is most likely the participle, gerund, supine and comparative lemma links (`base_lemma`), which landed after the figure was written; I did not isolate it.
+
+The fallback gained less than the "about 10 of 120" in the sample suggested (7 of 1,300 items is under 1%, where the sample implied about 2%). I have not looked at why; some of those sampled items may fail on a second cause as well. The sample above is not redrawn.
 
 ## Limits
 

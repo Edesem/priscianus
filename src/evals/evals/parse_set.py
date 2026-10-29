@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from priscianus.verifier.matching import lemma_keys
+from priscianus.verifier.matching import exact_lemma_keys
 
 from evals.gold import GoldToken, read_conllu
 
@@ -81,7 +81,7 @@ def frequency_ranks(treebanks: Mapping[str, Sequence[GoldToken]]) -> dict[str, i
     """
     totals: defaultdict[str, float] = defaultdict(float)
     for tokens in treebanks.values():
-        counts = Counter(min(lemma_keys(t.lemma)) for t in tokens if is_candidate(t))
+        counts = Counter(min(exact_lemma_keys(t.lemma)) for t in tokens if is_candidate(t))
         size = sum(counts.values())
         for key, count in counts.items():
             totals[key] += count / size / len(treebanks)
@@ -98,7 +98,7 @@ def band_for_rank(rank: int | None) -> str:
 
 def rank_of(ranks: Mapping[str, int], lemma: str) -> int | None:
     """A gold lemma's rank, the best one over the spellings its brackets allow."""
-    found = [ranks[key] for key in lemma_keys(lemma) if key in ranks]
+    found = [ranks[key] for key in exact_lemma_keys(lemma) if key in ranks]
     return min(found) if found else None
 
 

@@ -178,3 +178,66 @@ def test_participle_and_comparative_analyses_name_their_base_lemma(tmp_path: Pat
     assert paventes.base_lemma == key_loose("paveo")
     assert maiores.base_lemma == "magnus"
     assert rosae.base_lemma is None
+
+
+AFFIRMO = {
+    "word": "affirmō",
+    "pos": "verb",
+    "forms": [_form("affirmat", "third-person", "singular", "present", "active", "indicative")],
+}
+ADFIRMO = {
+    "word": "adfirmō",
+    "pos": "verb",
+    "forms": [_form("adfirmat", "third-person", "singular", "present", "active", "indicative")],
+}
+IMMUNDUS = {
+    "word": "immundus",
+    "pos": "adj",
+    "forms": [_form("immundus", "nominative", "singular")],
+}
+
+
+def _variant_db(tmp_path: Path, *entries: dict[str, object]) -> Path:
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
+    path = tmp_path / "morphology.db"
+    build_index(dump, path)
+    return path
+
+
+def test_unassimilated_spelling_finds_the_assimilated_form_and_is_marked(tmp_path: Path) -> None:
+    db = _variant_db(tmp_path, AFFIRMO, IMMUNDUS)
+
+    [verb] = lookup_form("adfirmat", db)
+    [adj] = lookup_form("inmundus", db)
+
+    assert (verb.lemma, verb.form, verb.variant) == ("affirmo", "affirmat", True)
+    assert (adj.lemma, adj.variant) == ("immundus", True)
+
+
+def test_assimilated_spelling_finds_the_unassimilated_form(tmp_path: Path) -> None:
+    db = _variant_db(tmp_path, ADFIRMO)
+
+    [verb] = lookup_form("affirmat", db)
+
+    assert (verb.form, verb.variant) == ("adfirmat", True)
+
+
+def test_exact_spelling_is_not_marked_and_wins_over_a_variant(tmp_path: Path) -> None:
+    db = _variant_db(tmp_path, AFFIRMO, ADFIRMO)
+
+    [exact] = lookup_form("adfirmat", db)
+
+    assert (exact.lemma, exact.variant) == ("adfirmo", False)
+
+
+def test_variants_can_be_switched_off(tmp_path: Path) -> None:
+    db = _variant_db(tmp_path, AFFIRMO)
+
+    assert lookup_form("adfirmat", db, variants=False) == []
+
+
+def test_a_form_with_no_variant_in_the_index_is_still_empty(tmp_path: Path) -> None:
+    db = _variant_db(tmp_path, AFFIRMO)
+
+    assert lookup_form("adfirmabo", db) == []
