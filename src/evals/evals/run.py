@@ -1,7 +1,8 @@
 """Run the parse set against a model in raw mode and store every response, scored (ADR-003)."""
 
+import threading
 from collections.abc import Sequence
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
 from priscianus.llm.client import LLMClient, SpendCapExceeded
@@ -55,7 +56,8 @@ def run_parse(
     is the target. The first `limit` items of the split are in scope. Only the model calls run
     in parallel; the store is written from this thread, one item at a time, so a stopped or
     crashed run keeps every item it finished. If the client's spend cap is reached the run ends
-    with status "stopped: max cost" and can be resumed. A bad response is a failure, not an error.
+    with status "stopped: max cost" and can be resumed. Any other error stops the calls not yet
+    started, marks the run "failed" and is raised. A bad response is a failure, not an error.
     """
     scope = [i for i in items if i.split == split][:limit]
     run_id = store.start_run(
@@ -66,8 +68,16 @@ def run_parse(
     done = failures = 0
     status = "complete"
 
+    stop = threading.Event()
+
     def ask(item: Item) -> RawResult:
-        return run_raw(client, model, item.token, occurrence_of(item.token, tokens))
+        if stop.is_set():
+            raise CancelledError
+        try:
+            return run_raw(client, model, item.token, occurrence_of(item.token, tokens))
+        except BaseException:
+            stop.set()
+            raise
 
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
         futures: dict[Future[RawResult], Item] = {pool.submit(ask, i): i for i in todo}
@@ -75,17 +85,18 @@ def run_parse(
             for future in as_completed(futures):
                 try:
                     result = future.result()
+                except CancelledError:
+                    continue
                 except SpendCapExceeded:
                     status = "stopped: max cost"
                     continue
-                item = futures[future]
-                _record(store, run_id, item, result, index)
+                _record(store, run_id, futures[future], result, index)
                 done += 1
                 failures += isinstance(result.outcome, ParseFailure)
-        finally:
-            if status != "complete":
-                for future in futures:
-                    future.cancel()
+        except BaseException:
+            stop.set()
+            store.finish_run(run_id, "failed")
+            raise
     store.finish_run(run_id, status)
     return RunSummary(run_id, done, len(scope) - len(todo), failures, status)
 

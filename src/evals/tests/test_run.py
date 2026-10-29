@@ -252,3 +252,21 @@ def test_the_run_stops_when_the_cost_cap_is_reached(tmp_path, items, tokens, api
     assert summary.answered == 1
     assert summary.status == "stopped: max cost"
     assert query(store, "SELECT status FROM runs") == [("stopped: max cost",)]
+
+
+def test_an_unexpected_error_stops_the_run_without_asking_for_the_rest(
+    tmp_path, items, tokens, api, store
+):
+    create = api.messages.create
+
+    def failing(**kwargs):
+        if len(api.messages.calls) == 1:
+            api.messages.calls.append(kwargs)
+            raise RuntimeError("boom")
+        return create(**kwargs)
+
+    api.messages.create = failing
+    with pytest.raises(RuntimeError):
+        go(tmp_path, items, tokens, api, store)
+    assert len(api.messages.calls) == 2
+    assert query(store, "SELECT status, finished_at IS NOT NULL FROM runs") == [("failed", 1)]
