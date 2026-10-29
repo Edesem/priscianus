@@ -6,6 +6,7 @@ from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
+from priscianus.morphology.canonical import canonicalise
 from priscianus.morphology.lookup import Analysis
 from priscianus.verifier.classify import Claim, Verdict, classify
 from priscianus.verifier.index import MorphologyIndex
@@ -150,10 +151,11 @@ def confusions(rows: Sequence[Row]) -> list[tuple[str, str, str, int]]:
     for row in rows:
         if row.score is None or row.claim is None:
             continue
+        wanted = canonicalise(row.gold["features"])
+        given = canonicalise(row.claim["features"])
         for name, right in row.score["features"].items():
             if not right:
-                given = row.claim["features"].get(name, "(none)")
-                counts[(name, row.gold["features"][name], given)] += 1
+                counts[(name, wanted[name], given.get(name, "(none)"))] += 1
     return [(*key, n) for key, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
 
 

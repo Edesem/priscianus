@@ -398,3 +398,15 @@ def test_an_empty_category_is_still_listed_with_its_count(store):
 
 def test_the_report_says_its_numbers_are_over_a_stratified_sample(store):
     assert "stratified sample" in report(store, 1)
+
+
+def test_a_participle_wrong_in_tense_is_a_confusion_whose_gold_marks_aspect(store):
+    run = store.start_run(KEY._replace(split="test"), git_commit="x")
+    answer(
+        store, run, "g", "Classical", "verb", "top1k",
+        gold("amo", "VERB", VerbForm="Part", Aspect="Perf"),
+        claim=claim("amo", "VERB", VerbForm="Part", Tense="Pres"),
+        verdict="verified",
+        score=score(Tense=False, VerbForm=True),
+    )  # fmt: skip
+    assert confusions(store.run_rows(run)) == [("Tense", "Past", "Pres", 1)]
