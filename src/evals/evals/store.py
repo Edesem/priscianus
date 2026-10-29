@@ -76,6 +76,24 @@ CREATE TABLE IF NOT EXISTS costs (
 """
 
 
+class Row(NamedTuple):
+    """One answered item with everything stored about it. A format failure has no claim."""
+
+    item_id: str
+    slice: str
+    pos_class: str
+    freq_band: str
+    gold: dict[str, Any]
+    raw_text: str
+    format_error: str | None
+    claim: dict[str, Any] | None
+    verdict: str | None
+    score: dict[str, Any] | None
+    usd: float
+    cache_hit: bool
+    latency_ms: int
+
+
 class RunKey(NamedTuple):
     """What identifies a run. Running the same key again resumes the run."""
 
@@ -250,3 +268,47 @@ class EvalStore:
                     cost["latency_ms"],
                 ),
             )
+
+    def run_rows(self, run_id: int) -> list[Row]:
+        """Every answered item of the run, in item ID order."""
+        rows = self._db.execute(
+            "SELECT items.id, items.slice, items.pos_class, items.freq_band, items.gold_json,"
+            " responses.raw_text, responses.format_error, claims.lemma, claims.upos,"
+            " claims.features_json, claims.form, verdicts.verdict, scores.exact_match,"
+            " scores.lemma_match, scores.upos_match, scores.features_json, costs.usd,"
+            " costs.cache_hit, costs.latency_ms"
+            " FROM responses JOIN items ON items.id = responses.item_id"
+            " JOIN costs ON costs.response_id = responses.id"
+            " LEFT JOIN claims ON claims.response_id = responses.id"
+            " LEFT JOIN verdicts ON verdicts.claim_id = claims.id"
+            " LEFT JOIN scores ON scores.response_id = responses.id"
+            " WHERE responses.run_id = ? ORDER BY items.id",
+            (run_id,),
+        )
+        return [
+            Row(
+                item_id=r[0],
+                slice=r[1],
+                pos_class=r[2],
+                freq_band=r[3],
+                gold=json.loads(r[4]),
+                raw_text=r[5],
+                format_error=r[6],
+                claim=None
+                if r[7] is None
+                else {"form": r[10], "lemma": r[7], "upos": r[8], "features": json.loads(r[9])},
+                verdict=r[11],
+                score=None
+                if r[12] is None
+                else {
+                    "exact_match": bool(r[12]),
+                    "lemma_match": bool(r[13]),
+                    "upos_match": bool(r[14]),
+                    "features": json.loads(r[15]),
+                },
+                usd=r[16],
+                cache_hit=bool(r[17]),
+                latency_ms=r[18],
+            )
+            for r in rows
+        ]
