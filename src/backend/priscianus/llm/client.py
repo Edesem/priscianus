@@ -3,6 +3,7 @@
 import hashlib
 import json
 import sqlite3
+import threading
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -92,7 +93,8 @@ class LLMClient:
 
         `spend_cap_usd` limits what this client spends in its lifetime (one run). A call
         that would start after the cap is reached raises `SpendCapExceeded`; the call that
-        crosses it still completes, so a run overshoots by at most one call.
+        crosses it still completes, and so do calls already in flight, so a run overshoots by at
+        most as many calls as it has threads.
         """
         self._api = api_client
         self._spend_cap = spend_cap_usd
@@ -100,7 +102,9 @@ class LLMClient:
         self._max_retries = max_retries
         self._backoff_base = backoff_base
         self._sleep = sleep
-        self._db = sqlite3.connect(db_path)
+        # Calls may come from several threads; the lock serialises the database and the tally.
+        self._lock = threading.RLock()
+        self._db = sqlite3.connect(db_path, check_same_thread=False)
         self._db.executescript(_SCHEMA)
 
     @classmethod
@@ -139,16 +143,19 @@ class LLMClient:
         key = _cache_key(request, sample)
 
         started = time.monotonic()
-        row = self._db.execute(
-            "SELECT response_json FROM response_cache WHERE cache_key = ?", (key,)
-        ).fetchone()
+        with self._lock:
+            row = self._db.execute(
+                "SELECT response_json FROM response_cache WHERE cache_key = ?", (key,)
+            ).fetchone()
         if row:
             response = _from_json(row[0], cache_hit=True)
             self._log(model, key, response, 0.0, started, None)
             return response
 
-        if self._spend_cap is not None and self._spent >= self._spend_cap:
-            raise SpendCapExceeded(f"spent ${self._spent:.4f} of ${self._spend_cap:.4f} cap")
+        with self._lock:
+            spent = self._spent
+        if self._spend_cap is not None and spent >= self._spend_cap:
+            raise SpendCapExceeded(f"spent ${spent:.4f} of ${self._spend_cap:.4f} cap")
         raw = self._create_with_retries(model, key, request)
         response = _from_message(raw)
         usd = cost_usd(
@@ -158,13 +165,14 @@ class LLMClient:
             cache_read_tokens=response.usage.cache_read_tokens,
             cache_write_tokens=response.usage.cache_write_tokens,
         )
-        with self._db:
-            self._db.execute(
-                "INSERT OR REPLACE INTO response_cache(cache_key, model, request_json,"
-                " response_json, usd) VALUES (?, ?, ?, ?, ?)",
-                (key, model, _canonical(request), _to_json(response), usd),
-            )
-        self._spent += usd
+        with self._lock:
+            with self._db:
+                self._db.execute(
+                    "INSERT OR REPLACE INTO response_cache(cache_key, model, request_json,"
+                    " response_json, usd) VALUES (?, ?, ?, ?, ?)",
+                    (key, model, _canonical(request), _to_json(response), usd),
+                )
+            self._spent += usd
         self._log(model, key, response, usd, started, None)
         return response
 
@@ -190,7 +198,7 @@ class LLMClient:
         error: str | None,
     ) -> None:
         usage = response.usage if response else Usage()
-        with self._db:
+        with self._lock, self._db:
             self._db.execute(
                 "INSERT INTO call_log(model, prompt_hash, input_tokens, cache_read_tokens,"
                 " cache_write_tokens, output_tokens, usd, latency_ms, cache_hit, error)"

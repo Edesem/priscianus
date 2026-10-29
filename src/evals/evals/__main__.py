@@ -2,19 +2,56 @@
 
 import argparse
 import json
-from collections.abc import Sequence
+import subprocess
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from priscianus.llm.client import LLMClient
+from priscianus.llm.config import HAIKU
 from priscianus.morphology.lookup import lookup_form
+from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
+from evals.gold import read_conllu
 from evals.index_agreement import evaluate, render_report, sample_disagreements
 from evals.parse_set import DEFAULT_SEED, build_set, load_parse_set
+from evals.raw_prompt import PROMPT_ID
+from evals.run import MODE, SET_NAME, run_parse
+from evals.store import EvalStore, RunKey
 
 _DATA = Path(__file__).resolve().parents[2] / "data"
 RELEASE = "r2.18"
+_RESULTS = Path(__file__).resolve().parents[1] / "results"
+
+MakeClient = Callable[..., LLMClient]
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def _make_client(*, spend_cap_usd: float | None, db_path: Path) -> LLMClient:
+    return LLMClient.from_env(spend_cap_usd=spend_cap_usd, db_path=db_path)
+
+
+def _git_commit() -> str:
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, cwd=_DATA
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+    return out.stdout.strip()
+
+
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"{text} is not a positive number")
+    return value
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    make_client: MakeClient = _make_client,
+    index: MorphologyIndex | None = None,
+) -> int:
     parser = argparse.ArgumentParser(prog="evals")
     commands = parser.add_subparsers(dest="command", required=True)
     build = commands.add_parser("build-set", help="Sample and freeze an eval set")
@@ -30,7 +67,50 @@ def main(argv: Sequence[str] | None = None) -> int:
     agreement.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
     agreement.add_argument("--sample", type=int, default=100, help="Disagreements to sample")
     agreement.add_argument("--sample-out", type=Path, help="Write the sampled disagreements here")
+    run = commands.add_parser("run", help="Run an eval set against a model and store the results")
+    run.add_argument("--mode", choices=["raw"], required=True)
+    run.add_argument("--set", choices=["parse"], required=True)
+    run.add_argument("--split", choices=["dev", "test"], default="dev")
+    run.add_argument("--model", default=HAIKU)
+    run.add_argument("--limit", type=int, help="Run only the first N items of the split")
+    run.add_argument("--concurrency", type=_positive_int, default=4, help="Parallel model calls")
+    run.add_argument("--max-cost", type=float, help="Stop when this many USD are spent in total")
+    run.add_argument("--manifest", type=Path, default=_DATA / "eval_sets" / "parse-v1.jsonl")
+    run.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
+    run.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
+    run.add_argument("--llm-db", type=Path, default=_RESULTS / "llm.db")
     options = parser.parse_args(argv)
+
+    if options.command == "run":
+        items = load_parse_set(options.manifest, options.ud_dir)
+        treebanks = sorted({i.token.treebank for i in items})
+        tokens = [
+            t
+            for name in treebanks
+            for t in read_conllu(options.ud_dir / f"la_{name}-ud-test.conllu")
+        ]
+        store = EvalStore(options.store)
+        version = options.manifest.stem.rsplit("-", 1)[-1]
+        key = RunKey(SET_NAME, version, options.split, MODE, options.model, PROMPT_ID)
+        cap = None if options.max_cost is None else options.max_cost - store.spent_usd_for(key)
+        summary = run_parse(
+            items,
+            tokens,
+            make_client(spend_cap_usd=cap, db_path=options.llm_db),
+            index or SqliteIndex(),
+            store,
+            model=options.model,
+            manifest_version=version,
+            split=options.split,
+            git_commit=_git_commit(),
+            limit=options.limit,
+            concurrency=options.concurrency,
+        )
+        print(
+            f"Run {summary.run_id} {summary.status}: answered {summary.answered}, "
+            f"skipped {summary.skipped}, format failures {summary.failures}"
+        )
+        return 0 if summary.status == "complete" else 1
 
     if options.command == "index-agreement":
         results = evaluate(load_parse_set(options.manifest, options.ud_dir), lookup_form)

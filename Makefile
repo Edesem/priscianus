@@ -1,4 +1,4 @@
-.PHONY: help setup dev backend frontend build test test-backend test-evals test-frontend lint format clean data eval-data eval-smoke parse
+.PHONY: help setup dev backend frontend build test test-backend test-evals test-frontend lint format clean data eval-data eval eval-smoke parse
 .DEFAULT_GOAL := help
 
 BACKEND_PORT ?= 8000
@@ -57,8 +57,11 @@ data: ## Download raw data into src/data/raw/, then build src/data/morphology.db
 eval-data: ## Download the UD Latin treebanks (pinned r2.18) into src/data/raw/ud/
 	cd src/backend && uv run python ../data/scripts/download_ud_latin.py
 
+eval: ## Run an eval, e.g. make eval ARGS="run --mode raw --set parse --split dev --limit 20"
+	cd src/evals && uv run python -m evals $(ARGS)
+
 eval-smoke: ## Run the eval smoke test (not yet implemented)
-	@echo "Eval smoke test arrives in Milestone 3."
+	@echo "The CI smoke eval arrives in Milestone 4 (docs/plan.md, section 5)."
 
 parse: ## Parse a Latin word, e.g. make parse WORD=amabat (needs make data)
 	@test -n "$(WORD)" || { echo "Usage: make parse WORD=amabat"; exit 1; }
