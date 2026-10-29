@@ -195,6 +195,23 @@ def test_a_response_that_is_not_a_claim_is_stored_as_a_format_failure(
     ) == [("perseus/s1/4", "not json")]
 
 
+def test_each_cost_records_the_latency_of_its_call(tmp_path, items, tokens, api, store):
+    go(tmp_path, items, tokens, api, store)
+    llm_latency = [
+        r[0]
+        for r in sqlite3.connect(tmp_path / "llm.db").execute(
+            "SELECT latency_ms FROM call_log ORDER BY id"
+        )
+    ]
+    assert sorted(r[0] for r in query(store, "SELECT latency_ms FROM costs")) == sorted(llm_latency)
+
+
+def test_an_item_keeps_its_sentence_beside_the_gold(tmp_path, items, tokens, api, store):
+    go(tmp_path, items, tokens, api, store)
+    (gold,) = query(store, "SELECT gold_json FROM items WHERE id = 'perseus/s1/2'")
+    assert json.loads(gold[0])["sentence"] == "Gallia est omnis divisa in partes tres"
+
+
 def test_cost_is_computed_from_usage(tmp_path, items, tokens, api, store):
     go(tmp_path, items, tokens, api, store)
     # 1000 input and 100 output tokens at Haiku prices, five times.

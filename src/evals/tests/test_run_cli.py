@@ -140,3 +140,72 @@ def test_concurrency_must_be_positive_and_no_run_is_opened(workspace, value):
     with pytest.raises(SystemExit):
         run_cli(workspace, "--concurrency", value)
     assert not (workspace[0] / "evals.db").exists()
+
+
+def report_cli(workspace, *args, **kwargs):
+    tmp_path, manifest, ud = workspace
+    return main(
+        [
+            "report",
+            *args,
+            "--store",
+            str(tmp_path / "evals.db"),
+            "--manifest",
+            str(kwargs.get("manifest", manifest)),
+            "--ud-dir",
+            str(ud),
+        ],
+        index=FakeIndex(),
+    )
+
+
+def test_report_prints_the_markdown_for_a_run(workspace, capsys):
+    run_cli(workspace)
+    capsys.readouterr()
+    assert report_cli(workspace, "1") == 0
+    out = capsys.readouterr().out
+    assert out.startswith("# Eval report")
+    assert "| Items | 4 |" in out
+
+
+def test_report_shows_the_index_ceiling_from_the_manifest(workspace, capsys):
+    run_cli(workspace)
+    capsys.readouterr()
+    report_cli(workspace, "1")
+    assert "| Index matches gold (ceiling) |" in capsys.readouterr().out
+
+
+def test_report_without_a_manifest_leaves_the_ceiling_out_and_says_so(workspace, capsys):
+    tmp_path, _, _ = workspace
+    run_cli(workspace)
+    capsys.readouterr()
+    assert report_cli(workspace, "1", manifest=tmp_path / "missing.jsonl") == 0
+    captured = capsys.readouterr()
+    assert "Index matches gold" not in captured.out
+    assert "no ceiling" in captured.err
+
+
+def test_report_puts_several_runs_side_by_side(workspace, capsys):
+    run_cli(workspace)
+    run_cli(workspace, "--split", "test")
+    capsys.readouterr()
+    report_cli(workspace, "1", "2")
+    out = capsys.readouterr().out
+    assert "| Items | 4 | 1 |" in out
+
+
+def test_report_can_write_to_a_file(workspace, capsys):
+    tmp_path, _, _ = workspace
+    run_cli(workspace)
+    capsys.readouterr()
+    target = tmp_path / "out" / "report.md"
+    assert report_cli(workspace, "1", "--out", str(target)) == 0
+    assert target.read_text(encoding="utf-8").startswith("# Eval report")
+    assert capsys.readouterr().out == ""
+
+
+def test_report_for_a_run_that_does_not_exist_fails(workspace, capsys):
+    run_cli(workspace)
+    capsys.readouterr()
+    assert report_cli(workspace, "99") == 2
+    assert "no run 99" in capsys.readouterr().err

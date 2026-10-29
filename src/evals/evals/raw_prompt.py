@@ -214,8 +214,8 @@ class RawResult:
     """One item's response, tagged with the prompt that produced it.
 
     `outcome` is a `Claim` or a `ParseFailure`; either way `raw_text` is kept, so a failure can
-    be read later. `usage` and `cache_hit` are the call's, for the cost record. Results of
-    different `prompt_id`s must never be scored together.
+    be read later. `usage`, `cache_hit` and `latency_ms` are the call's, for the cost record.
+    Results of different `prompt_id`s must never be scored together.
     """
 
     prompt_id: str
@@ -224,6 +224,7 @@ class RawResult:
     outcome: Claim | ParseFailure
     usage: Usage = Usage()
     cache_hit: bool = False
+    latency_ms: int = 0
 
 
 def run_raw(
@@ -251,6 +252,7 @@ def run_raw(
         parse_claim(response),
         usage=response.usage,
         cache_hit=response.cache_hit,
+        latency_ms=response.latency_ms,
     )
 
 
