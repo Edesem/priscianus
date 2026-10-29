@@ -93,7 +93,8 @@ class LLMClient:
 
         `spend_cap_usd` limits what this client spends in its lifetime (one run). A call
         that would start after the cap is reached raises `SpendCapExceeded`; the call that
-        crosses it still completes, so a run overshoots by at most one call.
+        crosses it still completes, and so do calls already in flight, so a run overshoots by at
+        most as many calls as it has threads.
         """
         self._api = api_client
         self._spend_cap = spend_cap_usd

@@ -39,6 +39,13 @@ def _git_commit() -> str:
     return out.stdout.strip()
 
 
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"{text} is not a positive number")
+    return value
+
+
 def main(
     argv: Sequence[str] | None = None,
     *,
@@ -66,7 +73,7 @@ def main(
     run.add_argument("--split", choices=["dev", "test"], default="dev")
     run.add_argument("--model", default=HAIKU)
     run.add_argument("--limit", type=int, help="Run only the first N items of the split")
-    run.add_argument("--concurrency", type=int, default=4, help="Parallel model calls")
+    run.add_argument("--concurrency", type=_positive_int, default=4, help="Parallel model calls")
     run.add_argument("--max-cost", type=float, help="Stop when this many USD are spent in total")
     run.add_argument("--manifest", type=Path, default=_DATA / "eval_sets" / "parse-v1.jsonl")
     run.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")

@@ -133,3 +133,10 @@ def test_run_only_supports_the_raw_mode_on_the_parse_set(workspace):
     tmp_path, manifest, ud = workspace
     with pytest.raises(SystemExit):
         main(["run", "--mode", "tools", "--set", "parse"])
+
+
+@pytest.mark.parametrize("value", ["0", "-2"])
+def test_concurrency_must_be_positive_and_no_run_is_opened(workspace, value):
+    with pytest.raises(SystemExit):
+        run_cli(workspace, "--concurrency", value)
+    assert not (workspace[0] / "evals.db").exists()
