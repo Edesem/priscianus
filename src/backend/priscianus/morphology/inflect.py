@@ -3,6 +3,7 @@
 import sqlite3
 from pathlib import Path
 
+from priscianus.morphology.assimilation import variant_keys
 from priscianus.morphology.build_index import _COLUMNS, DEFAULT_DB
 from priscianus.morphology.normaliser import key_loose, key_macron
 
@@ -21,7 +22,9 @@ def inflect(
 
     `pos` narrows the search when several lemmas share a spelling. So do length
     marks in `lemma`: "mālum" excludes "malum", while an unmarked "malum" matches both.
-    Raises NoSuchFormError if nothing matches, e.g. the vocative of a verb.
+    If the index has no lemma spelt like `lemma`, the assimilation variants of its prefix are
+    tried (*adfirmo* finds *affirmo*). Raises NoSuchFormError if nothing matches, e.g. the
+    vocative of a verb.
     """
     unknown = [f for f in features if f not in _COLUMNS]
     if unknown:
@@ -30,9 +33,10 @@ def inflect(
     query = (
         "SELECT DISTINCT l.lemma_display, a.form_display"
         " FROM analyses a JOIN lemmas l ON l.id = a.lemma_id"
-        " WHERE l.lemma = ?"
+        " WHERE l.lemma IN ({keys})"
     )
-    params: list[str] = [key_loose(lemma)]
+    key = key_loose(lemma)
+    params: list[str] = []
     if pos is not None:
         query += " AND l.pos = ?"
         params.append(pos)
@@ -44,6 +48,12 @@ def inflect(
 
     con = sqlite3.connect(db)
     try:
+        keys = [key]
+        if con.execute("SELECT 1 FROM lemmas WHERE lemma = ? LIMIT 1", (key,)).fetchone() is None:
+            keys = variant_keys(key) or keys
+            marked = False  # the marks were written for the other spelling
+        query = query.format(keys=", ".join("?" * len(keys)))
+        params = [*keys, *params]
         forms = list(
             dict.fromkeys(
                 form
