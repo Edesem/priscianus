@@ -259,3 +259,14 @@ def test_from_env_passes_client_options_through(tmp_path, monkeypatch):
     client = LLMClient.from_env(db_path=tmp_path / "llm.db", spend_cap_usd=0.05, max_retries=2)
     assert client._spend_cap == 0.05
     assert client._max_retries == 2
+
+
+def test_complete_can_be_called_from_several_threads(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    client = make(tmp_path, FakeAnthropic(message("ok")))
+    prompts = [[{"role": "user", "content": f"parse {n}"}] for n in range(20)]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        texts = list(pool.map(lambda m: client.complete(HAIKU, m).text, prompts))
+    assert texts == ["ok"] * 20
+    assert len(log_rows(tmp_path)) == 20
