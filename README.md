@@ -43,9 +43,13 @@ Unknown words print `No analyses found for '<word>'.` to stderr and exit with st
 
 ## Results
 
-| Mode | Model | Accuracy | Cost / request |
-|---|---|---|---|
-| _TBD_ | | | |
+Exact parse match on the frozen `parse-v1` set (1,000 test items, 300 dev items; stratified, so it overweights rare lemmas and verbs). Method, breakdowns and limits: [docs/baseline-eval.md](docs/baseline-eval.md).
+
+| Mode | Model | Test exact | Dev exact | Test hallucination | Cost / request |
+|---|---|---:|---:|---:|---:|
+| raw | Haiku 5.5 | 79.6% | 77.3% | 7.5% | $0.00017 |
+| raw | Sonnet 5.5 | 83.6% | 81.3% | 5.9% | $0.0017 |
+| raw | Opus 5.5 | 86.8% | 84.7% | 5.9% | $0.0038 |
 
 ## Licence
 
