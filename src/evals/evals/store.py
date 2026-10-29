@@ -170,6 +170,15 @@ class EvalStore:
         ).fetchone()
         return float(row[0])
 
+    def spent_usd_for(self, key: RunKey) -> float:
+        """What the run for `key` has cost so far; 0 if it has not started."""
+        row = self._db.execute(
+            "SELECT id FROM runs WHERE set_name = ? AND manifest_version = ? AND split = ?"
+            " AND mode = ? AND model = ? AND prompt_id = ?",
+            key,
+        ).fetchone()
+        return self.spent_usd(row[0]) if row else 0.0
+
     def record_response(
         self,
         run_id: int,

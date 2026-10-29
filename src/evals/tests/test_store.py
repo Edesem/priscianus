@@ -173,3 +173,11 @@ def test_run_totals_sum_the_cost_and_count_cache_hits(store):
     )
     record(store, run, "a/1/2", cost=cached)
     assert store.spent_usd(run) == pytest.approx(0.001)
+
+
+def test_spent_for_a_key_is_zero_before_the_run_exists_and_the_total_after(store):
+    assert store.spent_usd_for(KEY) == 0
+    run = store.start_run(KEY, git_commit="a")
+    record(store, run)
+    assert store.spent_usd_for(KEY) == pytest.approx(0.001)
+    assert store.spent_usd_for(KEY._replace(split="test")) == 0
