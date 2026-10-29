@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from priscianus.morphology.lookup import Analysis
 from priscianus.morphology.normaliser import key_loose
 from priscianus.verifier import Claim, Verdict, classify
@@ -185,3 +187,40 @@ def test_claim_features_are_canonicalised_before_comparison():
     claim = Claim("amatum", "amo", {"Case": "Acc", "VerbForm": "Part", "Aspect": "Perf"})
 
     assert classify(claim, FakeIndex([amatum])).verdict is Verdict.VERIFIED
+
+
+AFFIRMAT = reading("affirmat", "affirmo", {"Person": "3", "Number": "Sing"}, pos="verb")
+
+
+def test_unassimilated_claim_is_verified_through_the_variant_and_flagged():
+    index = FakeIndex([AFFIRMAT])
+
+    result = classify(Claim("affirmat", "adfirmo", {"Person": "3"}), index)
+
+    assert result.verdict is Verdict.VERIFIED
+    assert result.variant is True
+
+
+def test_variant_form_found_by_the_index_is_flagged():
+    found = replace(AFFIRMAT, form="adfirmat", variant=True)
+    index = FakeIndex([found])
+
+    result = classify(Claim("adfirmat", "affirmo", {"Person": "3"}), index)
+
+    assert result.verdict is Verdict.VERIFIED
+    assert result.variant is True
+
+
+def test_exact_claim_is_not_flagged():
+    index = FakeIndex([AFFIRMAT])
+
+    assert classify(Claim("affirmat", "affirmo", {"Person": "3"}), index).variant is False
+
+
+def test_variant_lemma_with_wrong_features_is_still_contradicted():
+    index = FakeIndex([AFFIRMAT])
+
+    result = classify(Claim("affirmat", "adfirmo", {"Person": "1"}), index)
+
+    assert result.verdict is Verdict.CONTRADICTED
+    assert result.variant is False
