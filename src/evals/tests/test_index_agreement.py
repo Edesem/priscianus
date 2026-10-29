@@ -78,3 +78,19 @@ def test_participle_linked_to_its_verb_agrees_at_the_lemma_level():
     assert check_token(token, lambda form: found) == Agreement(
         in_index=True, lemma_found=True, parse_matches=False
     )
+
+
+def test_a_parse_found_only_through_a_variant_spelling_is_flagged():
+    token = gold("adfirmat", "adfirmo", "VERB", {"Person": "3", "Number": "Sing"})
+    found = [analysis("affirmo", "verb", {"Person": "3", "Number": "Sing"})]
+
+    assert check_token(token, lambda form: found) == Agreement(
+        in_index=True, lemma_found=True, parse_matches=True, variant=True
+    )
+
+
+def test_an_exact_match_is_not_flagged_even_if_a_variant_reading_also_matches():
+    token = gold("affirmat", "affirmo", "VERB", {"Person": "3"})
+    exact = analysis("affirmo", "verb", {"Person": "3"})
+
+    assert not check_token(token, lambda form: [exact]).variant

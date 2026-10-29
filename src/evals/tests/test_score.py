@@ -90,3 +90,8 @@ def test_unknown_gold_feature_raises():
 
     with pytest.raises(UnknownFeatureError):
         score_claim(gold(Weird="X"), Claim("puella", "NOUN", {}))
+
+
+def test_a_lemma_spelt_with_an_assimilated_prefix_matches_its_variant():
+    score = score_claim(gold(lemma="adfirmo"), Claim("affirmo", "NOUN", {}))
+    assert score.lemma_match

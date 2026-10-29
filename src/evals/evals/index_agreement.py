@@ -6,7 +6,7 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 
 from priscianus.morphology.lookup import Analysis
-from priscianus.verifier.matching import lemma_agrees
+from priscianus.verifier.matching import lemma_agrees, uses_variant
 
 from evals.gold import GoldToken, matches
 from evals.parse_set import Item
@@ -19,15 +19,19 @@ class Agreement:
     in_index: bool
     lemma_found: bool
     parse_matches: bool
+    variant: bool = False
+    """The parse matches only through a variant spelling (#58), so it needs the fallback."""
 
 
 def check_token(token: GoldToken, lookup: Callable[[str], list[Analysis]]) -> Agreement:
     """Whether the index has the form, the gold lemma for it, and an analysis that `matches`."""
     analyses = lookup(token.form)
+    matching = [a for a in analyses if matches(token, a)]
     return Agreement(
         in_index=bool(analyses),
         lemma_found=any(lemma_agrees(token.lemma, a) for a in analyses),
-        parse_matches=any(matches(token, a) for a in analyses),
+        parse_matches=bool(matching),
+        variant=bool(matching) and all(uses_variant(token.lemma, a) for a in matching),
     )
 
 
@@ -93,10 +97,14 @@ def render_report(results: Sequence[tuple[Item, Agreement]]) -> str:
     )
     inflected = [a for i, a in results if i.pos_class != "uninflected"]
     matched = sum(a.parse_matches for a in inflected)
+    variant = sum(a.variant for _, a in results)
     lines = [
         f"Ceiling: {_pct(total.parse_matches, total.n)} of {total.n} items.",
         "",
         f"Ceiling on inflected classes: {_pct(matched, len(inflected))} of {len(inflected)} items.",
+        "",
+        f"Of the ceiling, {variant} items match only through a variant spelling (#58);"
+        f" without the fallback it is {_pct(total.parse_matches - variant, total.n)}.",
     ]
     for heading, dimension in _DIMENSIONS:
         lines += [

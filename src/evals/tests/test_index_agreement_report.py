@@ -69,3 +69,14 @@ def test_report_gives_a_second_ceiling_without_uninflected_words():
 
     assert "Ceiling: 25.0% of 4 items." in report
     assert "Ceiling on inflected classes: 50.0% of 2 items." in report
+
+
+def test_report_counts_the_items_that_match_only_through_a_variant_spelling():
+    via_variant = Agreement(in_index=True, lemma_found=True, parse_matches=True, variant=True)
+    results = [(item(0), FULL), (item(1), via_variant), (item(2), ABSENT), (item(3), ABSENT)]
+
+    report = render_report(results)
+
+    assert "Ceiling: 50.0% of 4 items." in report
+    assert "1 items match only through a variant spelling" in report
+    assert "without the fallback it is 25.0%" in report
