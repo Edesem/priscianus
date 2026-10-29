@@ -6,8 +6,9 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 
 from priscianus.morphology.lookup import Analysis
+from priscianus.verifier.matching import lemma_agrees
 
-from evals.gold import GoldToken, lemma_agrees, matches
+from evals.gold import GoldToken, matches
 from evals.parse_set import Item
 
 

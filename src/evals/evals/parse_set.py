@@ -9,7 +9,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from evals.gold import GoldToken, lemma_keys, read_conllu
+from priscianus.verifier.matching import lemma_keys
+
+from evals.gold import GoldToken, read_conllu
 
 _POS_CLASSES: dict[str, str] = {
     "VERB": "verb",
