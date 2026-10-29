@@ -12,6 +12,7 @@ from priscianus.llm.config import HAIKU
 from priscianus.morphology.lookup import lookup_form
 from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
+from evals.env import load_env
 from evals.gold import read_conllu
 from evals.index_agreement import Agreement, evaluate, sample_disagreements
 from evals.index_agreement import render_report as render_agreement
@@ -21,6 +22,7 @@ from evals.report import render_report
 from evals.run import MODE, SET_NAME, item_id, run_parse
 from evals.store import EvalStore, RunKey
 
+_ROOT = Path(__file__).resolve().parents[3]
 _DATA = Path(__file__).resolve().parents[2] / "data"
 RELEASE = "r2.18"
 _RESULTS = Path(__file__).resolve().parents[1] / "results"
@@ -29,6 +31,7 @@ MakeClient = Callable[..., LLMClient]
 
 
 def _make_client(*, spend_cap_usd: float | None, db_path: Path) -> LLMClient:
+    load_env(_ROOT / ".env")
     return LLMClient.from_env(spend_cap_usd=spend_cap_usd, db_path=db_path)
 
 
