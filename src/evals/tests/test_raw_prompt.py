@@ -267,3 +267,15 @@ def test_failure_counts_report_the_rate_and_the_kinds(tmp_path, tokens):
 
 def test_failure_counts_of_no_results_have_a_zero_rate():
     assert failure_counts([]).rate == 0.0
+
+
+def test_run_raw_carries_the_usage_and_whether_the_cache_answered(tmp_path, tokens):
+    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features()})
+    api = type("Api", (), {"messages": FakeMessages(text)})()
+    client = LLMClient(api, db_path=tmp_path / "llm.db")
+    first = run_raw(client, "claude-haiku-5-5", tokens[3], 1)
+    again = run_raw(client, "claude-haiku-5-5", tokens[3], 1)
+    assert first.usage == Usage(input_tokens=10, output_tokens=5)
+    assert not first.cache_hit
+    assert again.cache_hit
+    assert len(api.messages.calls) == 1

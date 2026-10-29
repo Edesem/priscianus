@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from priscianus.llm.client import LLMClient, LLMResponse
+from priscianus.llm.client import LLMClient, LLMResponse, Usage
 
 from evals.gold import GoldToken
 
@@ -214,13 +214,16 @@ class RawResult:
     """One item's response, tagged with the prompt that produced it.
 
     `outcome` is a `Claim` or a `ParseFailure`; either way `raw_text` is kept, so a failure can
-    be read later. Results of different `prompt_id`s must never be scored together.
+    be read later. `usage` and `cache_hit` are the call's, for the cost record. Results of
+    different `prompt_id`s must never be scored together.
     """
 
     prompt_id: str
     model: str
     raw_text: str
     outcome: Claim | ParseFailure
+    usage: Usage = Usage()
+    cache_hit: bool = False
 
 
 def run_raw(
@@ -241,7 +244,14 @@ def run_raw(
         max_tokens=max_tokens,
         sample=sample,
     )
-    return RawResult(PROMPT_ID, model, response.text, parse_claim(response))
+    return RawResult(
+        PROMPT_ID,
+        model,
+        response.text,
+        parse_claim(response),
+        usage=response.usage,
+        cache_hit=response.cache_hit,
+    )
 
 
 @dataclass(frozen=True)
