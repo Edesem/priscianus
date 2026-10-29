@@ -79,6 +79,7 @@ def record(store, run, item_id="perseus/s1/4", **overrides):
             "cache_write_tokens": 0,
             "usd": 0.001,
             "cache_hit": False,
+            "latency_ms": 250,
         },
     )
     fields.update(overrides)
@@ -170,6 +171,7 @@ def test_run_totals_sum_the_cost_and_count_cache_hits(store):
         cache_write_tokens=0,
         usd=0.0,
         cache_hit=True,
+        latency_ms=0,
     )
     record(store, run, "a/1/2", cost=cached)
     assert store.spent_usd(run) == pytest.approx(0.001)

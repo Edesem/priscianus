@@ -120,6 +120,7 @@ def _record(
             "lemma": token.lemma,
             "upos": token.upos,
             "features": map_features(token.features),
+            "sentence": token.sentence,
         },
     )
     usage = result.usage
@@ -139,6 +140,7 @@ def _record(
             cache_write_tokens=usage.cache_write_tokens,
         ),
         "cache_hit": result.cache_hit,
+        "latency_ms": result.latency_ms,
     }
     outcome = result.outcome
     if isinstance(outcome, ParseFailure):

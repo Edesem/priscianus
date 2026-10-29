@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS costs (
     cache_read_tokens INTEGER NOT NULL,
     cache_write_tokens INTEGER NOT NULL,
     usd REAL NOT NULL,
-    cache_hit INTEGER NOT NULL
+    cache_hit INTEGER NOT NULL,
+    latency_ms INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -100,6 +101,9 @@ class EvalStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(self.path)
         self._db.executescript(_SCHEMA)
+        columns = {r[1] for r in self._db.execute("PRAGMA table_info(costs)")}
+        if "latency_ms" not in columns:
+            self._db.execute("ALTER TABLE costs ADD COLUMN latency_ms INTEGER NOT NULL DEFAULT 0")
 
     def start_run(self, key: RunKey, *, git_commit: str) -> int:
         """Start the run for `key`, or reopen it if it exists, and return its ID."""
@@ -232,8 +236,8 @@ class EvalStore:
                 )
             self._db.execute(
                 "INSERT INTO costs(response_id, model, input_tokens, output_tokens,"
-                " cache_read_tokens, cache_write_tokens, usd, cache_hit)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                " cache_read_tokens, cache_write_tokens, usd, cache_hit, latency_ms)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     response_id,
                     cost["model"],
@@ -243,5 +247,6 @@ class EvalStore:
                     cost["cache_write_tokens"],
                     cost["usd"],
                     int(cost["cache_hit"]),
+                    cost["latency_ms"],
                 ),
             )

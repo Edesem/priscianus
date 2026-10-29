@@ -121,6 +121,15 @@ def test_every_call_is_logged_with_cost_and_cache_hit(tmp_path):
     assert hit["prompt_hash"] == miss["prompt_hash"]
 
 
+def test_a_response_carries_the_latency_that_was_logged(tmp_path):
+    client = make(tmp_path, FakeAnthropic())
+    fresh = client.complete(HAIKU, USER)
+    cached = client.complete(HAIKU, USER)
+    miss, _ = log_rows(tmp_path)
+    assert fresh.latency_ms == miss["latency_ms"]
+    assert cached.latency_ms == 0
+
+
 def test_cached_and_written_tokens_are_logged_and_priced(tmp_path):
     client = make(
         tmp_path,

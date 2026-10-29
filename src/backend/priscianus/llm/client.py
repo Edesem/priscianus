@@ -6,7 +6,7 @@ import sqlite3
 import threading
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +56,7 @@ class LLMResponse:
     stop_reason: str | None
     usage: Usage
     cache_hit: bool = False
+    latency_ms: int = 0
 
     @property
     def text(self) -> str:
@@ -149,7 +150,7 @@ class LLMClient:
             ).fetchone()
         if row:
             response = _from_json(row[0], cache_hit=True)
-            self._log(model, key, response, 0.0, started, None)
+            self._log(model, key, response, 0.0, _ms_since(started), None)
             return response
 
         with self._lock:
@@ -157,7 +158,8 @@ class LLMClient:
         if self._spend_cap is not None and spent >= self._spend_cap:
             raise SpendCapExceeded(f"spent ${spent:.4f} of ${self._spend_cap:.4f} cap")
         raw = self._create_with_retries(model, key, request)
-        response = _from_message(raw)
+        latency_ms = _ms_since(started)
+        response = replace(_from_message(raw), latency_ms=latency_ms)
         usd = cost_usd(
             model,
             input_tokens=response.usage.input_tokens,
@@ -173,7 +175,7 @@ class LLMClient:
                     (key, model, _canonical(request), _to_json(response), usd),
                 )
             self._spent += usd
-        self._log(model, key, response, usd, started, None)
+        self._log(model, key, response, usd, latency_ms, None)
         return response
 
     def _create_with_retries(self, model: str, key: str, request: dict[str, Any]) -> Any:
@@ -182,7 +184,7 @@ class LLMClient:
             try:
                 return self._api.messages.create(**request)
             except Exception as exc:
-                self._log(model, key, None, 0.0, started, f"{type(exc).__name__}: {exc}")
+                self._log(model, key, None, 0.0, _ms_since(started), f"{type(exc).__name__}: {exc}")
                 if attempt == self._max_retries or not _is_retryable(exc):
                     raise
                 self._sleep(self._backoff_base * 2**attempt)
@@ -194,7 +196,7 @@ class LLMClient:
         key: str,
         response: LLMResponse | None,
         usd: float,
-        started: float,
+        latency_ms: int,
         error: str | None,
     ) -> None:
         usage = response.usage if response else Usage()
@@ -211,11 +213,15 @@ class LLMClient:
                     usage.cache_write_tokens,
                     usage.output_tokens,
                     usd,
-                    round((time.monotonic() - started) * 1000),
+                    latency_ms,
                     int(bool(response and response.cache_hit)),
                     error,
                 ),
             )
+
+
+def _ms_since(started: float) -> int:
+    return round((time.monotonic() - started) * 1000)
 
 
 def _canonical(obj: Any) -> str:
