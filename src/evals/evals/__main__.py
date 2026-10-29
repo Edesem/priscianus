@@ -3,6 +3,7 @@
 import argparse
 import json
 import subprocess
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
@@ -12,10 +13,12 @@ from priscianus.morphology.lookup import lookup_form
 from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
 from evals.gold import read_conllu
-from evals.index_agreement import evaluate, render_report, sample_disagreements
+from evals.index_agreement import Agreement, evaluate, sample_disagreements
+from evals.index_agreement import render_report as render_agreement
 from evals.parse_set import DEFAULT_SEED, build_set, load_parse_set
 from evals.raw_prompt import PROMPT_ID
-from evals.run import MODE, SET_NAME, run_parse
+from evals.report import render_report
+from evals.run import MODE, SET_NAME, item_id, run_parse
 from evals.store import EvalStore, RunKey
 
 _DATA = Path(__file__).resolve().parents[2] / "data"
@@ -79,7 +82,36 @@ def main(
     run.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
     run.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
     run.add_argument("--llm-db", type=Path, default=_RESULTS / "llm.db")
+    report = commands.add_parser("report", help="Write a markdown report for stored runs")
+    report.add_argument("runs", nargs="+", type=int, metavar="run-id")
+    report.add_argument("--out", type=Path, help="Write the report here instead of printing it")
+    report.add_argument("--sample", type=int, default=5, help="Failure examples per category")
+    report.add_argument("--manifest", type=Path, default=_DATA / "eval_sets" / "parse-v1.jsonl")
+    report.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
+    report.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
     options = parser.parse_args(argv)
+
+    if options.command == "report":
+        store = EvalStore(options.store)
+        try:
+            runs = [(store.run_info(r), store.run_rows(r)) for r in options.runs]
+        except KeyError as missing:
+            print(f"no run {missing.args[0]} in {options.store}", file=sys.stderr)
+            return 2
+        morphology = index or SqliteIndex()
+        ceiling: dict[str, Agreement] | None = None
+        try:
+            items = load_parse_set(options.manifest, options.ud_dir)
+            ceiling = {item_id(i.token): a for i, a in evaluate(items, morphology.analyse)}
+        except OSError as error:
+            print(f"no ceiling: could not read the parse set ({error})", file=sys.stderr)
+        text = render_report(runs, morphology, agreement=ceiling, per_category=options.sample)
+        if options.out:
+            options.out.parent.mkdir(parents=True, exist_ok=True)
+            options.out.write_text(text, encoding="utf-8")
+        else:
+            print(text)
+        return 0
 
     if options.command == "run":
         items = load_parse_set(options.manifest, options.ud_dir)
@@ -114,7 +146,7 @@ def main(
 
     if options.command == "index-agreement":
         results = evaluate(load_parse_set(options.manifest, options.ud_dir), lookup_form)
-        print(render_report(results))
+        print(render_agreement(results))
         if options.sample_out:
             rows = [
                 {
