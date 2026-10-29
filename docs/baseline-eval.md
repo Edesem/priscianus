@@ -33,7 +33,7 @@ The run commands read `ANTHROPIC_API_KEY` from the environment (`set -a; . ./.en
 | dev | Sonnet 5.5 | 81.3% | 91.3% | 4.3% | 11.7% | 0 |
 | dev | Opus 5.5 | 84.7% | 91.3% | 5.0% | 11.3% | 0 |
 
-Dev is 300 items, so its rates move by about 2.5 points per 8 items; read dev as a sanity check, and test as the result. Dev's hallucination rates are lower than test's and do not preserve the model ordering; with 11 to 15 events each that is within noise.
+Dev is 300 items, so its rates move by about 2.7 points per 8 items; read dev as a sanity check, and test as the result. Dev's hallucination rates are lower than test's and do not preserve the model ordering; with 11 to 15 events each that is within noise.
 
 "Index matches gold" is 79.3% on test: for 793 of 1,000 items the index contains the gold reading. All three models exceed that, so the index is a weaker oracle than the models and cannot be treated as the ground truth for scoring. That is also why "unverifiable" is large (see below).
 
@@ -52,12 +52,12 @@ The whole baseline cost about $7.2 (test $5.58, dev $1.62). The prompt is about 
 All figures are test exact match unless stated. Order of the three models is Haiku / Sonnet / Opus.
 
 - **Rare lemmas.** Exact match falls from 82.6 / 85.7 / 88.9% in the top-1k band to 70.5 / 74.0 / 79.8% in the rare band, and lemma accuracy to 81.5% for Haiku. Opus narrows the gap but does not close it. The lemma is often a near-miss in orthography: the model returns a normalised or classical spelling (`sequor` for the gold `secor`, `conicio` for `coicio`) where the treebank keeps the attested form.
-- **Participles and passives.** Participles are the worst feature group: 38 / 43 / 50 of 67 exact, and 28 / 24 / 26 of them are contradicted by the index. The commonest mistake is leaving a feature out (gold `VerbForm=Part` answered with no VerbForm, Tense or Voice). Passive gold items: 63 / 67 / 76 of 90 exact, against 204 / 211 / 212 of 243 active.
+- **Participles and passives.** Participles are the worst feature group: 38 / 43 / 50 of 67 exact, and 28 / 24 / 26 of them are contradicted by the index. Omitted features are a visible part of it (in Haiku's confusions, gold `VerbForm=Part`, `Tense` and `Voice` each answered with nothing 6 times); I did not break participle errors down further. Passive gold items: 63 / 67 / 76 of 90 exact, against 204 / 211 / 212 of 243 active.
 - **Verbs and adjectives.** Verbs carry the highest hallucination rate (12.9% Haiku, 11.1% Opus) and adjectives and pronouns/determiners the lowest exact match for Haiku (69.3% each). Nouns are the strongest class (85.6 to 90.4%).
 - **Case and gender.** The recurring feature confusions are Nom→Acc (15 for Haiku) and gender omitted or defaulted to masculine (`Masc`→none 18, `Fem`→`Masc` 9, `Neut`→`Masc` 9 for Haiku). Case accuracy is 94.3 / 97.7 / 98.7% and gender 91.2 / 93.2 / 94.9%.
 - **Ambiguous forms.** When the index lists several readings for the form, exact match is 74.7% (Haiku), against 95.5% for single-reading forms. Most of the headroom is in choosing between valid readings from context, not in knowing the paradigm. Opus is at 86.8% on ambiguous forms.
 - **Subjunctives.** Not a weakness here: gold subjunctive items are 33 / 34 / 33 of 37 exact. Imperatives are shakier for the two smaller models (5 / 4 / 9 of 9) but the sample is tiny.
-- **Ecclesiastical spellings.** Contrary to what we expected, Ecclesiastical items score as well as or better than Classical for Haiku (81.4% vs 77.8%) and match for Sonnet and Opus (86.0% vs 87.6% for Opus). The rare Ecclesiastical band is the weaker part (Opus: 64 of 78 exact). I have not tested why Ecclesiastical text is no harder; the set does not isolate spelling variants.
+- **Ecclesiastical spellings.** Contrary to what we expected, Ecclesiastical items score as well as Classical or better: Haiku 81.4% vs 77.8%, Sonnet 84.8% vs 82.4%, Opus 86.0% vs 87.6%. The rare Ecclesiastical band is the weaker part (Opus: 64 of 78 exact). I have not tested why Ecclesiastical text is no harder; the set does not isolate spelling variants.
 - **Deponents.** Not measured separately: the set has no deponent stratum, so deponent errors are inside the voice figures above and cannot be separated. A dedicated slice is a candidate for `parse-v2`.
 - **Schema.** No format failures in any of the 3,900 calls (3 models × 1,300 items), so structured output is not a failure source.
 
