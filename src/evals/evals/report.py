@@ -3,14 +3,15 @@
 import math
 import random
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
+from priscianus.morphology.lookup import Analysis
 from priscianus.verifier.classify import Claim, Verdict, classify
 from priscianus.verifier.index import MorphologyIndex
 
 from evals.index_agreement import Agreement
-from evals.store import Row
+from evals.store import Row, RunInfo
 
 
 @dataclass(frozen=True)
@@ -200,3 +201,189 @@ def ceiling(rows: Sequence[Row], agreement: Mapping[str, Agreement]) -> tuple[in
     """How many of the rows covered by `agreement` the index can match to the gold, and how many."""
     covered = [agreement[r.item_id] for r in rows if r.item_id in agreement]
     return sum(a.parse_matches for a in covered), len(covered)
+
+
+_DIMENSIONS = (
+    ("Frequency band", "freq_band"),
+    ("POS class", "pos_class"),
+    ("Classical / Ecclesiastical", "slice"),
+)
+_MAX_READINGS = 8
+_MAX_RAW = 200
+
+
+def _pct(part: int, whole: int) -> str:
+    return f"{100 * part / whole:.1f}% ({part}/{whole})" if whole else "–"
+
+
+def _table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
+    return [
+        "| " + " | ".join(header) + " |",
+        "|" + "|".join("---" if i == 0 else "---:" for i in range(len(header))) + "|",
+        *("| " + " | ".join(row) + " |" for row in rows),
+        "",
+    ]
+
+
+def _features(features: Mapping[str, str]) -> str:
+    return "|".join(f"{name}={value}" for name, value in sorted(features.items())) or "–"
+
+
+def _readings(analyses: Sequence[Analysis]) -> str:
+    seen = dict.fromkeys(f"{a.lemma} {a.pos} {_features(a.features)}" for a in analyses)
+    shown = list(seen)[:_MAX_READINGS]
+    more = f"; … and {len(seen) - len(shown)} more" if len(seen) > len(shown) else ""
+    return "; ".join(shown) + more if shown else "none"
+
+
+def _headline_rows(
+    columns: Sequence[tuple[Headline, tuple[int, int] | None]],
+) -> list[list[str]]:
+    def row(label: str, count: Callable[[Headline], str]) -> list[str]:
+        return [label, *(count(h) for h, _ in columns)]
+
+    rows = [
+        row("Items", lambda h: str(h.n)),
+        row("Parse exact match", lambda h: _pct(h.exact, h.n)),
+        row("Lemma accuracy", lambda h: _pct(h.lemma, h.n)),
+        row("Claim accuracy", lambda h: _pct(h.verified + h.ambiguous, h.claims)),
+        row("Hallucination rate", lambda h: _pct(h.contradicted, h.claims)),
+        row("Unverifiable rate", lambda h: _pct(h.unknown, h.claims)),
+        row("Schema-failure rate", lambda h: _pct(h.format_failures, h.n)),
+    ]
+    if any(ceil for _, ceil in columns):
+        rows.insert(
+            2,
+            [
+                "Index matches gold (ceiling)",
+                *(_pct(*ceil) if ceil else "–" for _, ceil in columns),
+            ],
+        )
+    rows.append(row("Cost", lambda h: f"${h.usd:.4f}"))
+    rows.append(
+        row(
+            "Latency p50 / p95",
+            lambda h: (
+                "–" if h.latency_p50_ms is None else f"{h.latency_p50_ms} / {h.latency_p95_ms} ms"
+            ),
+        )
+    )
+    return rows
+
+
+def _group_rows(groups: Mapping[str, Headline]) -> list[list[str]]:
+    return [
+        [
+            name,
+            str(h.n),
+            _pct(h.exact, h.n),
+            _pct(h.lemma, h.n),
+            _pct(h.verified + h.ambiguous, h.claims),
+            _pct(h.contradicted, h.claims),
+            _pct(h.unknown, h.claims),
+            _pct(h.format_failures, h.n),
+        ]
+        for name, h in groups.items()
+    ]
+
+
+def _example(row: Row, index: MorphologyIndex) -> list[str]:
+    gold = row.gold
+    lines = [
+        f"- **{row.item_id}** — {gold.get('sentence') or '(sentence not stored)'}",
+        f"  - form: {gold['form']}",
+        f"  - gold: {gold['lemma']} {gold['upos']} {_features(gold['features'])}",
+    ]
+    if row.claim:
+        claim = row.claim
+        lines.append(
+            f"  - model: {claim['lemma']} {claim['upos']} {_features(claim['features'])}"
+            + (f" ({row.verdict})" if row.verdict else "")
+        )
+    else:
+        lines.append(f"  - model: {row.format_error}: {row.raw_text[:_MAX_RAW]!r}")
+    lines.append(f"  - index: {_readings(index.analyse(gold['form']))}")
+    return lines
+
+
+def render_report(
+    runs: Sequence[tuple[RunInfo, Sequence[Row]]],
+    index: MorphologyIndex,
+    *,
+    agreement: Mapping[str, Agreement] | None = None,
+    per_category: int = 5,
+    seed: int = 0,
+) -> str:
+    """Write the markdown report for `runs`, side by side in the headline tables.
+
+    `agreement` is the index-vs-gold result for the parse set (#40), shown as the ceiling on
+    exact match. The failure examples need the sentence, which the store keeps with the gold,
+    so the report is for the author; a committed one cites item IDs only (ADR-003).
+    """
+    out = ["# Eval report", ""]
+    out.append(
+        "The numbers are averages over a stratified sample that overweights rare lemmas and "
+        "verbs compared with running text (ADR-003). Claim rates are over the items that gave "
+        "a claim; exact match, lemma accuracy and the schema-failure rate are over all items; "
+        "per-feature accuracy is over the answers whose gold marks the feature."
+    )
+    out.append("")
+    heads = [headline(rows) for _, rows in runs]
+    ceilings = [ceiling(rows, agreement) if agreement is not None else None for _, rows in runs]
+    names = [f"#{info.run_id} {info.model} {info.split}" for info, _ in runs]
+    for info, _ in runs:
+        out.append(
+            f"- Run {info.run_id}: {info.model}, {info.mode} mode, split {info.split}, "
+            f"{info.set_name}-{info.manifest_version}, prompt {info.prompt_id}, {info.status}"
+        )
+    out += ["", "## Headline", ""]
+    out += _table(["Metric", *names], _headline_rows(list(zip(heads, ceilings, strict=True))))
+    feature_names = sorted({name for h in heads for name in h.features})
+    out += ["## Accuracy by feature", ""]
+    out += _table(
+        ["Feature", *names],
+        [
+            [f, *(_pct(*h.features[f]) if f in h.features else "–" for h in heads)]
+            for f in feature_names
+        ],
+    )
+    for info, rows in runs:
+        out += [f"## Run {info.run_id}: {info.model} on {info.split}", ""]
+        for title, dimension in _DIMENSIONS:
+            out += [f"### By {title.lower()}", ""]
+            out += _table(
+                [
+                    title,
+                    "Items",
+                    "Exact",
+                    "Lemma",
+                    "Claim acc.",
+                    "Halluc.",
+                    "Unverif.",
+                    "Schema fail",
+                ],
+                _group_rows(breakdown(rows, dimension)),
+            )
+        result = ambiguity(rows, index)
+        out += ["### Ambiguity handling", ""]
+        out += _table(
+            ["Gold reading in the index", "Exact match"],
+            [
+                ["Ambiguous forms", _pct(result.ambiguous_right, result.ambiguous)],
+                ["Single-reading forms", _pct(result.single_right, result.single)],
+            ],
+        )
+        out += ["### Feature confusions", ""]
+        out += _table(
+            ["Feature: gold → given", "Items"],
+            [[f"{name}: {gold} → {given}", str(n)] for name, gold, given, n in confusions(rows)],
+        )
+        out += ["### Failure examples", ""]
+        for category, (total, sample) in failure_samples(
+            rows, per_category=per_category, seed=seed
+        ).items():
+            out += [f"#### {category} ({total})", ""]
+            for row in sample:
+                out += _example(row, index)
+            out.append("")
+    return "\n".join(out).rstrip() + "\n"

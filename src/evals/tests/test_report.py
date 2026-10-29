@@ -2,7 +2,15 @@ import pytest
 from priscianus.morphology.lookup import Analysis
 
 from evals.index_agreement import Agreement
-from evals.report import ambiguity, breakdown, ceiling, confusions, failure_samples, headline
+from evals.report import (
+    ambiguity,
+    breakdown,
+    ceiling,
+    confusions,
+    failure_samples,
+    headline,
+    render_report,
+)
 from evals.store import EvalStore, RunKey
 
 KEY = RunKey("parse", "v1", "dev", "raw", "claude-haiku-5-5", "raw-parse-v3")
@@ -285,3 +293,108 @@ def test_the_ceiling_is_how_many_of_the_items_the_index_can_match(rows):
         # no entry for f: it is not in the parse set this was computed on
     }
     assert ceiling(rows, by_item) == (2, 5)
+
+
+def report(store, *runs, **kwargs):
+    return render_report(
+        [(store.run_info(r), store.run_rows(r)) for r in runs], FakeIndex(), **kwargs
+    )
+
+
+def line_with(text, start):
+    return next(line for line in text.splitlines() if line.startswith(start))
+
+
+def test_a_run_info_says_what_was_run(store):
+    info = store.run_info(1)
+    assert (info.run_id, info.model, info.split, info.manifest_version, info.prompt_id) == (
+        1,
+        "claude-haiku-5-5",
+        "dev",
+        "v1",
+        "raw-parse-v3",
+    )
+    assert info.status == "complete"
+
+
+def test_asking_for_a_run_that_does_not_exist_is_an_error(store):
+    with pytest.raises(KeyError):
+        store.run_info(99)
+
+
+def test_the_report_gives_each_headline_metric_with_its_counts(store):
+    text = report(store, 1)
+    assert "33.3% (2/6)" in line_with(text, "| Parse exact match")
+    assert "50.0% (3/6)" in line_with(text, "| Lemma accuracy")
+    assert "60.0% (3/5)" in line_with(text, "| Claim accuracy")
+    assert "20.0% (1/5)" in line_with(text, "| Hallucination rate")
+    assert "20.0% (1/5)" in line_with(text, "| Unverifiable rate")
+    assert "16.7% (1/6)" in line_with(text, "| Schema-failure rate")
+    assert "$0.1500" in line_with(text, "| Cost")
+    assert "300 / 500 ms" in line_with(text, "| Latency p50 / p95")
+
+
+def test_the_report_says_which_split_and_prompt_it_used(store):
+    text = report(store, 1)
+    assert "dev" in text and "raw-parse-v3" in text and "claude-haiku-5-5" in text
+
+
+def test_several_runs_are_side_by_side_in_one_table(store):
+    second = store.start_run(KEY._replace(model="claude-sonnet-5-5"), git_commit="x")
+    answer(
+        store, second, "a", "Classical", "noun", "top1k",
+        gold("rosa", Case="Nom", Number="Sing"),
+        claim=claim("rosa", Case="Nom", Number="Sing"),
+        verdict="verified",
+        score=score(Case=True, Number=True),
+    )  # fmt: skip
+    row = line_with(report(store, 1, second), "| Parse exact match")
+    assert "33.3% (2/6)" in row and "100.0% (1/1)" in row
+
+
+def test_each_breakdown_shows_the_item_count_of_its_cells(store):
+    text = report(store, 1)
+    assert "| rare | 2 |" in text
+    assert "| Ecclesiastical | 3 |" in text
+    assert "| verb | 2 |" in text
+
+
+def test_the_index_ceiling_is_shown_beside_exact_match(store):
+    agreement = {"a": Agreement(True, True, True), "b": Agreement(True, True, False)}
+    text = report(store, 1, agreement=agreement)
+    assert "50.0% (1/2)" in line_with(text, "| Index matches gold (ceiling)")
+    assert "Index matches gold" not in report(store, 1)
+
+
+def test_ambiguity_handling_is_reported(store):
+    text = report(store, 1)
+    assert "50.0% (1/2)" in line_with(text, "| Ambiguous forms")
+    assert "100.0% (1/1)" in line_with(text, "| Single-reading forms")
+
+
+def test_the_feature_confusions_are_listed(store):
+    assert "Case: Nom → Abl | 1" in report(store, 1)
+
+
+def test_a_failure_example_shows_sentence_form_gold_answer_and_index_readings(store):
+    text = report(store, 1)
+    wrong_reading = text.split("### Wrong reading")[1].split("###")[0]
+    assert "Sentence." in wrong_reading
+    assert "rosa" in wrong_reading
+    assert "gold: rosa NOUN Case=Nom|Number=Sing" in wrong_reading
+    assert "model: rosa NOUN Case=Abl|Number=Sing" in wrong_reading
+    assert "Case=Nom|Number=Sing" in wrong_reading.split("index:")[1]
+    assert "Case=Abl|Number=Sing" in wrong_reading.split("index:")[1]
+
+
+def test_a_format_failure_shows_what_the_model_sent(store):
+    failure = report(store, 1).split("### Format failure")[1].split("###")[0]
+    assert "invalid JSON" in failure
+
+
+def test_an_empty_category_is_still_listed_with_its_count(store):
+    assert "### Index disagreement (0)" in report(store, 1)
+
+
+def test_the_report_says_its_numbers_are_over_a_stratified_sample(store):
+    assert "stratified sample" in report(store, 1)

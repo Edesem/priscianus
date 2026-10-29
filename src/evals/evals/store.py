@@ -94,6 +94,19 @@ class Row(NamedTuple):
     latency_ms: int
 
 
+class RunInfo(NamedTuple):
+    """What a stored run is, and whether it finished."""
+
+    run_id: int
+    set_name: str
+    manifest_version: str
+    split: str
+    mode: str
+    model: str
+    prompt_id: str
+    status: str
+
+
 class RunKey(NamedTuple):
     """What identifies a run. Running the same key again resumes the run."""
 
@@ -312,3 +325,14 @@ class EvalStore:
             )
             for r in rows
         ]
+
+    def run_info(self, run_id: int) -> RunInfo:
+        """Describe the run. Raises `KeyError` if there is no such run."""
+        row = self._db.execute(
+            "SELECT id, set_name, manifest_version, split, mode, model, prompt_id, status"
+            " FROM runs WHERE id = ?",
+            (run_id,),
+        ).fetchone()
+        if row is None:
+            raise KeyError(run_id)
+        return RunInfo(*row)
