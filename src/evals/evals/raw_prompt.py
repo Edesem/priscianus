@@ -2,11 +2,12 @@
 
 import json
 import re
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from priscianus.llm.client import LLMResponse
+from priscianus.llm.client import LLMClient, LLMResponse
 
 from evals.gold import GoldToken
 
@@ -206,3 +207,57 @@ def _schema_error(data: Any) -> str | None:
     if missing:
         return f"features are missing {', '.join(missing)}"
     return None
+
+
+@dataclass(frozen=True)
+class RawResult:
+    """One item's response, tagged with the prompt that produced it.
+
+    `outcome` is a `Claim` or a `ParseFailure`; either way `raw_text` is kept, so a failure can
+    be read later. Results of different `prompt_id`s must never be scored together.
+    """
+
+    prompt_id: str
+    model: str
+    raw_text: str
+    outcome: Claim | ParseFailure
+
+
+def run_raw(
+    client: LLMClient,
+    model: str,
+    target: GoldToken,
+    occurrence: int,
+    *,
+    max_tokens: int = 4096,
+    sample: int = 0,
+) -> RawResult:
+    """Ask `model` to parse `target` once. A bad response becomes a failure and is not retried."""
+    response = client.complete(
+        model,
+        build_messages(target, occurrence),
+        system=SYSTEM_PROMPT,
+        output_schema=OUTPUT_SCHEMA,
+        max_tokens=max_tokens,
+        sample=sample,
+    )
+    return RawResult(PROMPT_ID, model, response.text, parse_claim(response))
+
+
+@dataclass(frozen=True)
+class FailureCounts:
+    total: int
+    failed: int
+    by_kind: dict[str, int]
+
+    @property
+    def rate(self) -> float:
+        return self.failed / self.total if self.total else 0.0
+
+
+def failure_counts(results: Sequence[RawResult]) -> FailureCounts:
+    """How many results are failures, and of what kind (the reason up to its first colon)."""
+    kinds = Counter(
+        r.outcome.reason.split(":")[0] for r in results if isinstance(r.outcome, ParseFailure)
+    )
+    return FailureCounts(len(results), sum(kinds.values()), dict(kinds))

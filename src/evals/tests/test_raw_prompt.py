@@ -1,7 +1,9 @@
 import json
 
 import pytest
-from priscianus.llm.client import LLMResponse, Usage
+from anthropic.types import Message, TextBlock
+from anthropic.types import Usage as AnthropicUsage
+from priscianus.llm.client import LLMClient, LLMResponse, Usage
 
 from evals.gold import parse_conllu
 from evals.raw_prompt import (
@@ -11,10 +13,13 @@ from evals.raw_prompt import (
     SYSTEM_PROMPT,
     Claim,
     ParseFailure,
+    RawResult,
     build_messages,
+    failure_counts,
     mark_target,
     occurrence_of,
     parse_claim,
+    run_raw,
 )
 
 CONLLU = """\
@@ -203,3 +208,62 @@ def test_system_prompt_gives_pronouns_a_person():
 
 def test_system_prompt_takes_gender_from_the_word_it_agrees_with():
     assert "agrees with or refers to" in SYSTEM_PROMPT
+
+
+class FakeMessages:
+    def __init__(self, text: str, stop_reason: str = "end_turn") -> None:
+        self.text, self.stop_reason, self.calls = text, stop_reason, []
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        return Message(
+            id="msg_1",
+            type="message",
+            role="assistant",
+            model="claude-haiku-5-5",
+            content=[TextBlock(type="text", text=self.text)],
+            stop_reason=self.stop_reason,
+            stop_sequence=None,
+            usage=AnthropicUsage(input_tokens=10, output_tokens=5),
+        )
+
+
+def run_with(tmp_path, text, tokens, **kwargs):
+    api = type("Api", (), {"messages": FakeMessages(text, **kwargs)})()
+    client = LLMClient(api, db_path=tmp_path / "llm.db")
+    return run_raw(client, "claude-haiku-5-5", tokens[3], 1), api.messages
+
+
+def test_run_raw_sends_the_prompt_and_tags_the_result_with_its_id(tmp_path, tokens):
+    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Person="1")})
+    result, messages = run_with(tmp_path, text, tokens)
+    call = messages.calls[0]
+    assert call["system"][0]["text"] == SYSTEM_PROMPT
+    assert call["output_config"]["format"]["schema"] == OUTPUT_SCHEMA
+    assert "[[cano]]" in call["messages"][0]["content"]
+    assert result.prompt_id == PROMPT_ID
+    assert result.model == "claude-haiku-5-5"
+    assert result.raw_text == text
+    assert result.outcome == Claim("cano", "VERB", {"Person": "1"})
+
+
+def test_run_raw_records_a_bad_response_as_a_failure_and_asks_only_once(tmp_path, tokens):
+    result, messages = run_with(tmp_path, "not json", tokens)
+    assert isinstance(result.outcome, ParseFailure)
+    assert result.raw_text == "not json"
+    assert result.prompt_id == PROMPT_ID
+    assert len(messages.calls) == 1
+
+
+def test_failure_counts_report_the_rate_and_the_kinds(tmp_path, tokens):
+    good = RawResult(PROMPT_ID, "m", "{}", Claim("cano", "VERB", {}))
+    bad = RawResult(PROMPT_ID, "m", "x", ParseFailure("invalid JSON: Expecting value"))
+    cut = RawResult(PROMPT_ID, "m", "", ParseFailure("stopped with max_tokens"))
+    counts = failure_counts([good, bad, bad, cut])
+    assert (counts.total, counts.failed) == (4, 3)
+    assert counts.rate == 0.75
+    assert counts.by_kind == {"invalid JSON": 2, "stopped with max_tokens": 1}
+
+
+def test_failure_counts_of_no_results_have_a_zero_rate():
+    assert failure_counts([]).rate == 0.0
