@@ -82,9 +82,10 @@ I found no published benchmark of LLM accuracy on Latin morphology, so the eval 
 │     for each claim → query morphology index                  │
 │     → VERIFIED | AMBIGUOUS | CONTRADICTED | UNKNOWN          │
 │                                                              │
-│  3. Repair loop: CONTRADICTED claims are sent back to the    │
-│     model with the DB's correct parses (max 2 retries),      │
-│     then dropped or flagged if still wrong.                  │
+│  3. Repair loop: claims the index cannot confirm go back to  │
+│     the model with the DB's readings as evidence (max 2      │
+│     retries), and are flagged if still contradicted.         │
+│     See docs/adr/ADR-004.md.                                 │
 └───────────────┬──────────────────────────────┬───────────────┘
                 │                              │
      ┌──────────▼──────────┐        ┌──────────▼──────────┐
@@ -129,7 +130,7 @@ The eval is the headline of the project. Put the results table at the top of the
 4. **Adversarial set:** ~100 traps: ambiguous forms, deponents, irregular verbs (*ferō*, *eō*), defective nouns, invented non-words ("parse *amabavit*"). The correct behaviour for a non-word is to say so.
 
 ### Metrics
-Exact definitions for the parse set, and the meaning of each verdict, are in [ADR-003](adr/ADR-003.md).
+Exact definitions for the parse set, and the meaning of each verdict, are in [ADR-003](adr/ADR-003.md); those for the `tools` and `verified` modes are in [ADR-004](adr/ADR-004.md).
 
 | Metric | Definition |
 |---|---|
