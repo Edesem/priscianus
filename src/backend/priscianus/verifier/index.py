@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Protocol
 
 from priscianus.morphology.build_index import DEFAULT_DB
+from priscianus.morphology.inflect import inflect
 from priscianus.morphology.lookup import Analysis, lookup_form
 from priscianus.morphology.normaliser import key_loose
 
@@ -18,6 +19,10 @@ class MorphologyIndex(Protocol):
         """Whether the index holds the lemma (and so its whole paradigm)."""
         ...
 
+    def inflect(self, lemma: str, features: dict[str, str], pos: str | None = None) -> list[str]:
+        """Every indexed spelling of `lemma` with `features`; raises `NoSuchFormError` if none."""
+        ...
+
 
 class SqliteIndex:
     """The `MorphologyIndex` over the SQLite file `make data` builds."""
@@ -27,6 +32,9 @@ class SqliteIndex:
 
     def analyse(self, form: str) -> list[Analysis]:
         return lookup_form(form, self._db)
+
+    def inflect(self, lemma: str, features: dict[str, str], pos: str | None = None) -> list[str]:
+        return inflect(lemma, features, pos, self._db)
 
     def has_lemma(self, lemma: str) -> bool:
         con = sqlite3.connect(self._db)

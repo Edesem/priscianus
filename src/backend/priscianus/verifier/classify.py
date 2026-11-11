@@ -50,7 +50,7 @@ def classify(claim: Claim, index: MorphologyIndex) -> Classification:
     and the form has no other, AMBIGUOUS if the form has others too, CONTRADICTED if no
     reading matches but the index holds the claimed lemma, and UNKNOWN if it does not.
     """
-    readings = _readings(index.analyse(claim.form))
+    readings = merge_readings(index.analyse(claim.form))
     matching = tuple(a for a in readings if _matches(claim, a))
     others = tuple(a for a in readings if a not in matching)
     if matching:
@@ -71,7 +71,7 @@ def _matches(claim: Claim, analysis: Analysis) -> bool:
     )
 
 
-def _readings(analyses: list[Analysis]) -> list[Analysis]:
+def merge_readings(analyses: list[Analysis]) -> list[Analysis]:
     """One analysis for each distinct reading, in index order."""
     seen: set[tuple[str, tuple[tuple[str, str], ...]]] = set()
     readings = []

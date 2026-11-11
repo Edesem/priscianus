@@ -1,7 +1,10 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from priscianus.morphology.build_index import build_index
+from priscianus.morphology.inflect import NoSuchFormError
 from priscianus.verifier import SqliteIndex
 
 
@@ -38,3 +41,16 @@ def test_sqlite_index_marks_analyses_found_under_a_variant_spelling(tmp_path: Pa
 
     assert [a.variant for a in index.analyse("adfirmat")] == [True]
     assert [a.variant for a in index.analyse("affirmat")] == [False]
+
+
+def test_sqlite_index_inflects_a_lemma_and_raises_when_no_form_fits(tmp_path: Path) -> None:
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text(json.dumps(ROSA, ensure_ascii=False) + "\n")
+    db = tmp_path / "morphology.db"
+    build_index(dump, db)
+    index = SqliteIndex(db)
+
+    assert index.inflect("rosa", {"Case": "Acc"}) == ["rosam"]
+    assert index.inflect("rosa", {"Case": "Acc"}, pos="noun") == ["rosam"]
+    with pytest.raises(NoSuchFormError):
+        index.inflect("rosa", {"Case": "Voc"})
