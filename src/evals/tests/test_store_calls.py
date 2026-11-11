@@ -47,7 +47,13 @@ def save_item(store, item_id):
         slice="Classical",
         pos_class="verb",
         freq_band="top1k",
-        gold={"lemma": "cano", "upos": "VERB", "features": {"Person": "1"}},
+        gold={
+            "form": "cano",
+            "lemma": "cano",
+            "upos": "VERB",
+            "features": {"Person": "1"},
+            "sentence": "Arma virumque cano.",
+        },
     )
 
 

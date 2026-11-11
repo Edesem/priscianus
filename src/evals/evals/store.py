@@ -147,6 +147,14 @@ class StoredClaim(NamedTuple):
     score: dict[str, Any] | None
 
 
+class StoredVerdictClaim(NamedTuple):
+    """A stored claim, and the verdict it was stored with (None if it has none)."""
+
+    claim_id: int
+    claim: dict[str, Any]
+    verdict: str | None
+
+
 class StoredToolCall(NamedTuple):
     attempt: int
     round: int
@@ -222,6 +230,12 @@ class EvalStore:
             for column, definition in added.items():
                 if column not in have:
                     self._db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+        # One verdict for each claim and build. Verdicts stored before builds were recorded have
+        # a NULL build, which SQLite treats as distinct, so they never clash.
+        self._db.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS verdict_per_build"
+            " ON verdicts(claim_id, index_build_hash)"
+        )
 
     def start_run(
         self, key: RunKey, *, git_commit: str, index_build_hash: str | None = None
@@ -473,8 +487,13 @@ class EvalStore:
             ),
         )
 
-    def run_rows(self, run_id: int) -> list[Row]:
-        """Every answered item of the run, in item ID order."""
+    def run_rows(self, run_id: int, *, verdicts_under: str | None = None) -> list[Row]:
+        """Every answered item of the run, in item ID order, with its final claim and its calls
+        summed.
+
+        Verdicts are those stored under `verdicts_under`, a build `evals score` judged the claims
+        under, or under the run's own build if it is None.
+        """
         rows = self._db.execute(
             "SELECT items.id, items.slice, items.pos_class, items.freq_band, items.gold_json,"
             " responses.raw_text, responses.format_error, claims.lemma, claims.upos,"
@@ -488,11 +507,11 @@ class EvalStore:
             " JOIN runs ON runs.id = responses.run_id"
             " LEFT JOIN claims ON claims.response_id = responses.id AND claims.is_final = 1"
             " LEFT JOIN verdicts ON verdicts.claim_id = claims.id"
-            " AND verdicts.index_build_hash IS runs.index_build_hash"
+            " AND verdicts.index_build_hash IS COALESCE(?, runs.index_build_hash)"
             " LEFT JOIN scores ON scores.response_id = responses.id"
             " AND (scores.claim_id = claims.id OR scores.claim_id IS NULL)"
             " WHERE responses.run_id = ? ORDER BY items.id",
-            (run_id,),
+            (verdicts_under, run_id),
         )
         return [
             Row(
@@ -521,6 +540,39 @@ class EvalStore:
             )
             for r in rows
         ]
+
+    def claims_to_verify(self, run_id: int) -> list[StoredVerdictClaim]:
+        """Every claim of the run, of every attempt, with its verdict under the run's own build."""
+        return [
+            StoredVerdictClaim(
+                r[0],
+                {"form": r[1], "lemma": r[2], "upos": r[3], "features": json.loads(r[4])},
+                r[5],
+            )
+            for r in self._db.execute(
+                "SELECT claims.id, claims.form, claims.lemma, claims.upos, claims.features_json,"
+                " verdicts.verdict FROM claims JOIN responses ON responses.id = claims.response_id"
+                " JOIN runs ON runs.id = responses.run_id"
+                " LEFT JOIN verdicts ON verdicts.claim_id = claims.id"
+                " AND verdicts.index_build_hash IS runs.index_build_hash"
+                " WHERE responses.run_id = ? ORDER BY claims.id",
+                (run_id,),
+            )
+        ]
+
+    def save_verdict(
+        self, claim_id: int, verdict: str, index_build_hash: str, readings: Mapping[str, Any]
+    ) -> None:
+        """Store the verdict of a claim under a build, replacing the one from an earlier pass
+        under the same build."""
+        with self._db:
+            self._db.execute(
+                "INSERT INTO verdicts(claim_id, verdict, index_build_hash, readings_json)"
+                " VALUES (?, ?, ?, ?) ON CONFLICT(claim_id, index_build_hash)"
+                " DO UPDATE SET verdict = excluded.verdict,"
+                " readings_json = excluded.readings_json",
+                (claim_id, verdict, index_build_hash, _json(readings)),
+            )
 
     def run_info(self, run_id: int) -> RunInfo:
         """Describe the run. Raises `KeyError` if there is no such run."""
