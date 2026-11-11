@@ -55,14 +55,54 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
 ]
 
 
+class _ToolError(Exception):
+    """An input error, reported to the model as an `is_error` result. Never leaves this module."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
 def execute_tool_use(block: dict[str, Any], index: MorphologyIndex) -> dict[str, Any]:
-    """Run one `tool_use` block and return its `tool_result` block."""
-    body = _lookup_form(block["input"]["form"], index)
-    return {"type": "tool_result", "tool_use_id": block["id"], "content": _dump(body)}
+    """Run one `tool_use` block and return its `tool_result` block.
+
+    Input errors become a result with `is_error: true`. A failure of the index or the code is
+    not an input error, so it raises and fails the run.
+    """
+    result: dict[str, Any] = {"type": "tool_result", "tool_use_id": block["id"]}
+    try:
+        result["content"] = _dump(_run(block["name"], block["input"], index))
+    except _ToolError as error:
+        result["content"] = _dump({"error": error.code, "message": error.message})
+        result["is_error"] = True
+    return result
+
+
+def _run(name: str, arguments: Any, index: MorphologyIndex) -> dict[str, Any]:
+    if name != "lookup_form":
+        available = ", ".join(tool["name"] for tool in TOOL_DEFINITIONS)
+        raise _ToolError("unknown_tool", f"There is no tool {name!r}. The tools are: {available}.")
+    return _lookup_form(_form_argument(arguments), index)
+
+
+def _form_argument(arguments: Any) -> str:
+    if not isinstance(arguments, dict) or set(arguments) != {"form"}:
+        raise _ToolError("invalid_input", 'The input must be an object with only "form".')
+    form = arguments["form"]
+    if not isinstance(form, str) or not any(c.isalpha() for c in form):
+        raise _ToolError("invalid_input", '"form" must be a string with letters in it.')
+    return form
 
 
 def _lookup_form(form: str, index: MorphologyIndex) -> dict[str, Any]:
     readings = merge_readings(index.analyse(form))
+    if not readings:
+        raise _ToolError(
+            "unknown_form",
+            f"The index does not hold {form!r}. It is incomplete and holds no uninflected"
+            " words, so this does not mean that the form is wrong.",
+        )
     return {
         "form": form,
         "readings": [_reading(r) for r in readings[:MAX_RESULTS]],

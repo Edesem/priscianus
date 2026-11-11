@@ -172,3 +172,42 @@ def test_lookup_form_shows_at_most_fifty_readings_and_reports_the_real_total() -
     assert len(body["readings"]) == 50
     assert body["total"] == 60
     assert body["truncated"] is True
+
+
+def assert_error(result: dict[str, Any], code: str) -> dict[str, Any]:
+    assert result["type"] == "tool_result"
+    assert result["tool_use_id"] == "toolu_1"
+    assert result["is_error"] is True
+    body = content(result)
+    assert set(body) == {"error", "message"}
+    assert body["error"] == code
+    assert body["message"]
+    return body
+
+
+def test_lookup_form_of_a_form_the_index_lacks_is_an_error_that_is_not_a_verdict() -> None:
+    body = assert_error(
+        run(FakeIndex([LOQUITUR]), "lookup_form", {"form": "flurbus"}), "unknown_form"
+    )
+
+    assert "does not hold" in body["message"]
+    assert "not mean" in body["message"]
+
+
+def test_lookup_form_rejects_arguments_that_fail_the_schema() -> None:
+    index = FakeIndex([LOQUITUR])
+
+    for bad in ({}, {"form": 3}, {"form": "loquitur", "extra": 1}, {"form": "-"}, {"form": "  "}):
+        assert_error(run(index, "lookup_form", bad), "invalid_input")
+
+
+def test_an_unknown_tool_is_an_error_that_names_the_available_tools() -> None:
+    body = assert_error(run(FakeIndex([]), "list_lemmas", {}), "unknown_tool")
+
+    assert "lookup_form" in body["message"] and "inflect" in body["message"]
+
+
+def test_arguments_that_are_not_an_object_are_invalid_input() -> None:
+    block = {"type": "tool_use", "id": "toolu_1", "name": "lookup_form", "input": "loquitur"}
+
+    assert_error(execute_tool_use(block, FakeIndex([])), "invalid_input")
