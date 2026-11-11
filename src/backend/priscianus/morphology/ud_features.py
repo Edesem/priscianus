@@ -113,3 +113,19 @@ def map_tags(tags: Iterable[str]) -> list[dict[str, str]]:
 
 def _slot(features: dict[str, str]) -> str:
     return next(f for f in features if f not in _SECONDARY_FEATURES)
+
+
+def canonical_values() -> dict[str, tuple[str, ...]]:
+    """Every feature a claim may carry, with its allowed values (ADR-003, ADR-004).
+
+    Read from the tag mapping above, so that the values cannot drift from the index. Two
+    differences from the mapping: `Degree=Pos` is left out (a positive has no Degree), and
+    `VerbForm=Gdv` is added (Wiktionary has no tag for the gerundive).
+    """
+    values: dict[str, list[str]] = {}
+    for features in _TAG_FEATURES.values():
+        for name, value in features.items():
+            if (name, value) != ("Degree", "Pos") and value not in values.setdefault(name, []):
+                values[name].append(value)
+    values["VerbForm"].append("Gdv")
+    return {name: tuple(options) for name, options in values.items()}

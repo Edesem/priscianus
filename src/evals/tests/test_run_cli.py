@@ -124,7 +124,9 @@ def test_without_max_cost_there_is_no_cap(workspace):
 
 
 def test_run_exits_non_zero_when_stopped_by_the_cost_cap(workspace, capsys):
-    code, _, _ = run_cli(workspace, "--max-cost", "0.0001")
+    # One call at a time: with parallel calls all of them can start before the first one's
+    # cost is recorded, and then the cap is never reached.
+    code, _, _ = run_cli(workspace, "--max-cost", "0.0001", "--concurrency", "1")
     assert code == 1
     assert "stopped: max cost" in capsys.readouterr().out
 

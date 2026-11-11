@@ -3,11 +3,13 @@
 import json
 import re
 from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
 from priscianus.llm.client import LLMClient, LLMResponse, Usage
+from priscianus.verifier.claims import Claim, SchemaError
+from priscianus.verifier.claims import parse_claim as parse_claim_object
 
 from evals.gold import GoldToken
 
@@ -158,55 +160,29 @@ def build_messages(target: GoldToken, occurrence: int) -> list[dict[str, Any]]:
 
 
 @dataclass(frozen=True)
-class Claim:
-    lemma: str
-    upos: str
-    features: dict[str, str]
-
-
-@dataclass(frozen=True)
 class ParseFailure:
     """A response that is not a valid claim. It is counted, never retried."""
 
     reason: str
 
 
-def parse_claim(response: LLMResponse) -> Claim | ParseFailure:
-    """Validate a response against the schema; anything that fails is a `ParseFailure`."""
+def parse_claim(response: LLMResponse, form: str) -> Claim | ParseFailure:
+    """Validate a response against the schema; anything that fails is a `ParseFailure`.
+
+    `raw-parse-v3` output has no form, so the caller gives the target's.
+    """
     if response.stop_reason in ("max_tokens", "refusal"):
         return ParseFailure(f"stopped with {response.stop_reason}")
     try:
         data = json.loads(response.text)
     except json.JSONDecodeError as exc:
         return ParseFailure(f"invalid JSON: {exc}")
-    reason = _schema_error(data)
-    if reason:
-        return ParseFailure(reason)
-    features = {name: value for name, value in data["features"].items() if value != NONE}
-    return Claim(data["lemma"], data["upos"], features)
-
-
-def _schema_error(data: Any) -> str | None:
     if not isinstance(data, dict):
-        return "JSON is not an object"
+        return ParseFailure("JSON is not an object")
     if set(data) != {"lemma", "upos", "features"}:
-        return f"fields are {sorted(data)}, not lemma, upos and features"
-    if not isinstance(data["lemma"], str) or not data["lemma"].strip():
-        return "lemma is not a non-empty string"
-    if data["upos"] not in UPOS_TAGS:
-        return f"unknown upos {data['upos']!r}"
-    features = data["features"]
-    if not isinstance(features, Mapping):
-        return "features is not an object"
-    for name, value in features.items():
-        if name not in ALLOWED_FEATURES:
-            return f"unknown feature {name!r}"
-        if value != NONE and value not in ALLOWED_FEATURES[name]:
-            return f"{name}={value!r} is not an allowed value"
-    missing = [name for name in ALLOWED_FEATURES if name not in features]
-    if missing:
-        return f"features are missing {', '.join(missing)}"
-    return None
+        return ParseFailure(f"fields are {sorted(data)}, not lemma, upos and features")
+    claim = parse_claim_object({**data, "form": form})
+    return ParseFailure(claim.reason) if isinstance(claim, SchemaError) else claim
 
 
 @dataclass(frozen=True)
@@ -249,7 +225,7 @@ def run_raw(
         PROMPT_ID,
         model,
         response.text,
-        parse_claim(response),
+        parse_claim(response, target.form),
         usage=response.usage,
         cache_hit=response.cache_hit,
         latency_ms=response.latency_ms,

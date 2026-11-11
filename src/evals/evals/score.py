@@ -3,11 +3,11 @@
 from dataclasses import dataclass
 
 from priscianus.morphology.canonical import canonicalise, relax
+from priscianus.verifier.claims import Claim
 from priscianus.verifier.matching import lemma_keys
 
 from evals.gold import GoldToken, map_features
 from evals.parse_set import pos_class
-from evals.raw_prompt import Claim
 
 
 @dataclass(frozen=True)
