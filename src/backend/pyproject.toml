@@ -40,5 +40,5 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 
 [[tool.mypy.overrides]]
-module = ["priscianus.morphology.*", "priscianus.verifier.*"]
+module = ["priscianus.morphology.*", "priscianus.verifier.*", "priscianus.pipeline.*"]
 strict = true
