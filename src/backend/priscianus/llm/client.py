@@ -121,6 +121,7 @@ class LLMClient:
         *,
         system: str | None = None,
         tools: Sequence[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
         output_schema: dict[str, Any] | None = None,
         max_tokens: int = 1024,
         temperature: float | None = None,
@@ -137,6 +138,8 @@ class LLMClient:
             ]
         if tools:
             request["tools"] = list(tools)
+        if tool_choice is not None:
+            request["tool_choice"] = tool_choice
         if output_schema is not None:
             request["output_config"] = {"format": {"type": "json_schema", "schema": output_schema}}
         if temperature is not None:

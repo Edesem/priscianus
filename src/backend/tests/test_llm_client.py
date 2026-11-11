@@ -90,6 +90,7 @@ def test_cache_persists_across_clients(tmp_path):
         {"messages": [{"role": "user", "content": "parse amant"}]},
         {"tools": [{"name": "lookup", "description": "d", "input_schema": {"type": "object"}}]},
         {"output_schema": {"type": "object"}},
+        {"tool_choice": {"type": "none"}},
         {"temperature": 0.5},
         {"max_tokens": 99},
         {"sample": 1},
@@ -169,6 +170,15 @@ def test_output_schema_is_sent_and_parsed(tmp_path):
         "format": {"type": "json_schema", "schema": schema}
     }
     assert r.json() == {"lemma": "amo"}
+
+
+def test_tool_choice_is_sent_and_omitted_when_not_given(tmp_path):
+    fake = FakeAnthropic()
+    client = make(tmp_path, fake)
+    client.complete(HAIKU, USER)
+    client.complete(HAIKU, USER, tool_choice={"type": "none"})
+    assert "tool_choice" not in fake.messages.calls[0]
+    assert fake.messages.calls[1]["tool_choice"] == {"type": "none"}
 
 
 def test_tool_use_blocks_survive_the_cache(tmp_path):
