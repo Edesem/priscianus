@@ -70,10 +70,48 @@ CREATE TABLE IF NOT EXISTS costs (
     cache_read_tokens INTEGER NOT NULL,
     cache_write_tokens INTEGER NOT NULL,
     usd REAL NOT NULL,
-    cache_hit INTEGER NOT NULL,
-    latency_ms INTEGER NOT NULL DEFAULT 0
+    cache_hit INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tool_calls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    response_id INTEGER NOT NULL REFERENCES responses(id),
+    attempt INTEGER NOT NULL,
+    round INTEGER NOT NULL,
+    ordinal INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    input_json TEXT NOT NULL,
+    result_json TEXT NOT NULL,
+    is_error INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS repair_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    response_id INTEGER NOT NULL REFERENCES responses(id),
+    attempt INTEGER NOT NULL,
+    message_text TEXT NOT NULL,
+    raw_text TEXT NOT NULL,
+    format_error TEXT,
+    stop_reason TEXT,
+    UNIQUE (response_id, attempt)
 );
 """
+
+# ADR-004, Decision 9: columns added after the first release of the store. Each is added to a
+# store that lacks it, so a store from before the change opens as it was. Every existing row is
+# the first and final attempt of its response, which the defaults say.
+_ADDED_COLUMNS: dict[str, dict[str, str]] = {
+    "runs": {"index_build_hash": "TEXT", "params_json": "TEXT"},
+    "responses": {"final_state": "TEXT", "tool_limit_hit": "INTEGER NOT NULL DEFAULT 0"},
+    "claims": {"attempt": "INTEGER NOT NULL DEFAULT 0", "is_final": "INTEGER NOT NULL DEFAULT 1"},
+    "verdicts": {"index_build_hash": "TEXT", "readings_json": "TEXT"},
+    "scores": {"claim_id": "INTEGER REFERENCES claims(id)"},
+    "costs": {
+        "latency_ms": "INTEGER NOT NULL DEFAULT 0",
+        "attempt": "INTEGER NOT NULL DEFAULT 0",
+        "ordinal": "INTEGER NOT NULL DEFAULT 0",
+        "list_usd": "REAL",
+        "list_latency_ms": "INTEGER",
+    },
+}
 
 
 class Row(NamedTuple):
@@ -132,9 +170,11 @@ class EvalStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(self.path)
         self._db.executescript(_SCHEMA)
-        columns = {r[1] for r in self._db.execute("PRAGMA table_info(costs)")}
-        if "latency_ms" not in columns:
-            self._db.execute("ALTER TABLE costs ADD COLUMN latency_ms INTEGER NOT NULL DEFAULT 0")
+        for table, added in _ADDED_COLUMNS.items():
+            have = {r[1] for r in self._db.execute(f"PRAGMA table_info({table})")}
+            for column, definition in added.items():
+                if column not in have:
+                    self._db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def start_run(self, key: RunKey, *, git_commit: str) -> int:
         """Start the run for `key`, or reopen it if it exists, and return its ID."""
