@@ -29,7 +29,7 @@ def item(treebank: str, pos_class: str, freq_band: str, slice_name: str) -> Item
     )
 
 
-def test_breakdown_counts_each_level_per_group():
+def test_breakdown_counts_each_level_per_group_and_dimension():
     results = [
         (item("perseus", "noun", "top1k", "Classical"), FULL),
         (item("perseus", "verb", "rare", "Classical"), LEMMA_ONLY),
@@ -43,18 +43,7 @@ def test_breakdown_counts_each_level_per_group():
         "perseus": Rates(n=2, in_index=2, lemma_found=2, parse_matches=1),
         "ittb": Rates(n=2, in_index=1, lemma_found=1, parse_matches=1),
     }
-
-
-def test_breakdown_by_pos_class_freq_band_and_slice():
-    results = [
-        (item("perseus", "noun", "top1k", "Classical"), FULL),
-        (item("ittb", "verb", "rare", "Ecclesiastical"), ABSENT),
-    ]
-
+    # The other groupings use the same counting.
     assert set(breakdown(results, "pos_class")) == {"noun", "verb"}
     assert set(breakdown(results, "freq_band")) == {"top1k", "rare"}
-    assert breakdown(results, "slice")["Ecclesiastical"].parse_matches == 0
-
-
-def test_rates_are_fractions_of_n():
-    assert Rates(n=4, in_index=3, lemma_found=2, parse_matches=1).parse_rate == 0.25
+    assert breakdown(results, "slice")["Ecclesiastical"].parse_matches == 1

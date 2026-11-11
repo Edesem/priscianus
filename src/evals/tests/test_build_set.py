@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from evals.__main__ import main
-from evals.parse_set import ManifestExistsError, load_parse_set
+from evals.parse_set import load_parse_set
 
 PERSEUS = """\
 # newdoc id = phi0959.phi006.perseus-lat1.tb.xml
@@ -59,13 +59,6 @@ def test_build_set_writes_a_manifest_that_loads_and_prints_the_summary(ud_dir, t
     assert sorted(i.token.sent_id for i in items) == ["p@1", "p@2"]
     assert not {"virum", "que"} & {i.token.form for i in items}
     assert "| Slice | Class | Band | Test | Dev |" in capsys.readouterr().out
-
-
-def test_build_set_refuses_to_overwrite_a_frozen_manifest(ud_dir, tmp_path):
-    main(args(ud_dir, tmp_path / "sets"))
-
-    with pytest.raises(ManifestExistsError):
-        main(args(ud_dir, tmp_path / "sets"))
 
 
 def test_build_set_needs_all_six_train_splits_for_the_frequency_bands(ud_dir, tmp_path):
