@@ -67,12 +67,7 @@ def test_a_stored_claim_gets_a_verdict_under_the_new_build(store):
         ("contradicted", None),
         ("verified", NEW),
     ]
-
-
-def test_the_verdicts_stored_with_the_run_are_not_overwritten(store):
-    run = store.start_run(RAW, git_commit="a")
-    record_raw(store, run, "perseus/s1/2", EST, "contradicted")
-    reverify_run(store, run, FakeIndex(), NEW)
+    # The verdicts stored with the run are not overwritten.
     assert [r.verdict for r in store.run_rows(run)] == ["contradicted"]
     assert [r.verdict for r in store.run_rows(run, verdicts_under=NEW)] == ["verified"]
 

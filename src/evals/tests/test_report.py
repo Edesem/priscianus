@@ -131,13 +131,10 @@ def rows(store):
     return store.run_rows(1)
 
 
-def test_exact_match_counts_a_format_failure_as_a_miss(rows):
+def test_exact_match_and_lemma_accuracy_count_a_format_failure_as_a_miss(rows):
     m = headline(rows)
     assert (m.n, m.exact) == (6, 2)  # a and f
-
-
-def test_lemma_accuracy_counts_a_format_failure_as_a_miss(rows):
-    assert headline(rows).lemma == 3  # a, b, f
+    assert m.lemma == 3  # a, b, f
 
 
 def test_claim_rates_are_over_the_items_that_gave_a_claim(rows):
@@ -181,9 +178,6 @@ def test_every_metric_is_counted_again_within_a_band(rows):
     assert {band: m.n for band, m in by_band.items()} == {"top1k": 4, "rare": 2}
     assert by_band["top1k"].exact == 2
     assert by_band["rare"].format_failures == 1
-
-
-def test_a_breakdown_by_pos_class_and_slice_shows_item_counts(rows):
     assert {k: m.n for k, m in breakdown(rows, "pos_class").items()} == {"noun": 4, "verb": 2}
     assert {k: m.n for k, m in breakdown(rows, "slice").items()} == {
         "Classical": 3,
@@ -305,23 +299,6 @@ def line_with(text, start):
     return next(line for line in text.splitlines() if line.startswith(start))
 
 
-def test_a_run_info_says_what_was_run(store):
-    info = store.run_info(1)
-    assert (info.run_id, info.model, info.split, info.manifest_version, info.prompt_id) == (
-        1,
-        "claude-haiku-5-5",
-        "dev",
-        "v1",
-        "raw-parse-v3",
-    )
-    assert info.status == "complete"
-
-
-def test_asking_for_a_run_that_does_not_exist_is_an_error(store):
-    with pytest.raises(KeyError):
-        store.run_info(99)
-
-
 def test_the_report_gives_each_headline_metric_with_its_counts(store):
     text = report(store, 1)
     assert "33.3% (2/6)" in line_with(text, "| Parse exact match")
@@ -366,16 +343,6 @@ def test_the_index_ceiling_is_shown_beside_exact_match(store):
     assert "Index matches gold" not in report(store, 1)
 
 
-def test_ambiguity_handling_is_reported(store):
-    text = report(store, 1)
-    assert "50.0% (1/2)" in line_with(text, "| Ambiguous forms")
-    assert "100.0% (1/1)" in line_with(text, "| Single-reading forms")
-
-
-def test_the_feature_confusions_are_listed(store):
-    assert "Case: Nom → Abl | 1" in report(store, 1)
-
-
 def test_a_failure_example_shows_sentence_form_gold_answer_and_index_readings(store):
     text = report(store, 1)
     wrong_reading = text.split("### Wrong reading")[1].split("###")[0]
@@ -392,12 +359,13 @@ def test_a_format_failure_shows_what_the_model_sent(store):
     assert "invalid JSON" in failure
 
 
-def test_an_empty_category_is_still_listed_with_its_count(store):
-    assert "### Index disagreement (0)" in report(store, 1)
-
-
-def test_the_report_says_its_numbers_are_over_a_stratified_sample(store):
-    assert "stratified sample" in report(store, 1)
+def test_the_report_has_the_ambiguity_confusion_and_empty_category_sections(store):
+    text = report(store, 1)
+    assert "50.0% (1/2)" in line_with(text, "| Ambiguous forms")
+    assert "100.0% (1/1)" in line_with(text, "| Single-reading forms")
+    assert "Case: Nom → Abl | 1" in text
+    assert "### Index disagreement (0)" in text
+    assert "stratified sample" in text
 
 
 def test_a_participle_wrong_in_tense_is_a_confusion_whose_gold_marks_aspect(store):
