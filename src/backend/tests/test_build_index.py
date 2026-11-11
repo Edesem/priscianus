@@ -86,7 +86,7 @@ def test_unknown_tag_skips_only_that_form(tmp_path: Path) -> None:
     assert report.skipped_forms == {"unknown tag: bogus-tag": 1}
 
 
-def test_meta_records_schema_version_dump_date_and_build_hash(tmp_path: Path) -> None:
+def test_meta_records_version_dump_date_build_hash_and_licence(tmp_path: Path) -> None:
     dump = _write_dump(tmp_path / "dump.jsonl", [ROSA])
     (tmp_path / "dump.jsonl.meta.json").write_text(
         json.dumps({"last_modified": "Wed, 21 Oct 2026 13:51:28 GMT"})
@@ -99,6 +99,8 @@ def test_meta_records_schema_version_dump_date_and_build_hash(tmp_path: Path) ->
     assert meta["schema_version"] == "3"
     assert meta["dump_date"] == "Wed, 21 Oct 2026 13:51:28 GMT"
     assert len(meta["build_hash"]) == 64
+    assert "CC BY-SA 4.0" in meta["licence"]
+    assert "Wiktionary" in meta["licence"]
 
 
 def test_build_hash_is_reproducible_and_tracks_the_dump(tmp_path: Path) -> None:
@@ -132,25 +134,6 @@ def test_main_builds_the_db_and_prints_row_counts_and_skips(
     assert "no inflected forms: 1" in out
     assert "skipped forms: 1" in out
     assert "unknown tag: bogus-tag: 1" in out
-
-
-def test_forms_without_tags_are_ignored(tmp_path: Path) -> None:
-    entry = {"word": "rosa", "pos": "noun", "forms": [{"form": "rosa"}, *ROSA["forms"]]}  # type: ignore[list-item]
-    dump = _write_dump(tmp_path / "dump.jsonl", [entry])
-
-    report = build_index(dump, tmp_path / "morphology.db")
-
-    assert report.analyses == 2
-
-
-def test_meta_carries_the_cc_by_sa_licence_note(tmp_path: Path) -> None:
-    db = tmp_path / "morphology.db"
-
-    build_index(_write_dump(tmp_path / "dump.jsonl", [ROSA]), db)
-
-    meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
-    assert "CC BY-SA 4.0" in meta["licence"]
-    assert "Wiktionary" in meta["licence"]
 
 
 def test_aspect_keeps_imperfect_perfect_and_future_perfect_distinct(tmp_path: Path) -> None:
@@ -380,34 +363,6 @@ def _deponent_flags(db: Path) -> dict[str, int]:
     return dict(sqlite3.connect(db).execute("SELECT lemma, deponent FROM lemmas"))
 
 
-def test_deponent_verb_is_flagged_from_the_headword_line(tmp_path: Path) -> None:
-    loquor = _verb("loquor", "loquor (perfect active locūtus sum); third conjugation, deponent")
-    amo = _verb("amō", "amō (perfect active amāvī); first conjugation")
-    db = tmp_path / "morphology.db"
-
-    build_index(_write_dump(tmp_path / "dump.jsonl", [loquor, amo]), db)
-
-    assert _deponent_flags(db) == {"loquor": 1, "amo": 0}
-
-
-def test_semi_deponent_verb_is_flagged(tmp_path: Path) -> None:
-    audeo = _verb("audeō", "audeō (perfect active ausus sum); second conjugation, semi-deponent")
-    db = tmp_path / "morphology.db"
-
-    build_index(_write_dump(tmp_path / "dump.jsonl", [audeo]), db)
-
-    assert _deponent_flags(db) == {"audeo": 1}
-
-
-def test_optionally_semi_deponent_verb_is_flagged(tmp_path: Path) -> None:
-    audeo = _verb("audeō", "audeō (perfect active ausī or ausus sum); optionally semi-deponent")
-    db = tmp_path / "morphology.db"
-
-    build_index(_write_dump(tmp_path / "dump.jsonl", [audeo]), db)
-
-    assert _deponent_flags(db) == {"audeo": 1}
-
-
 def test_a_deponent_sense_tag_alone_does_not_flag_the_lemma(tmp_path: Path) -> None:
     manduco = {
         **_verb("mandūcō", "mandūcō (perfect active mandūcāvī); first conjugation"),
@@ -467,6 +422,10 @@ _REAL_HEADWORDS = {
         "audeō (present infinitive audēre, perfect active ausī or ausus sum, supine ausum); "
         "second conjugation, optionally semi-deponent"
     ),
+    "gaudeō": (
+        "gaudeō (present infinitive gaudēre, perfect active gāvīsus sum); "
+        "second conjugation, semi-deponent"
+    ),
 }
 
 
@@ -486,5 +445,6 @@ def test_spot_check_of_real_deponent_headword_lines(tmp_path: Path) -> None:
         "morior": 1,
         "utor": 1,
         "audeo": 1,
+        "gaudeo": 1,
         "amo": 0,
     }

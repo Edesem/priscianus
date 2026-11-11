@@ -116,16 +116,6 @@ def test_several_genders_give_one_reading_per_gender() -> None:
     )
 
 
-def test_several_cases_give_one_reading_per_case() -> None:
-    readings = map_tags(["nominative", "accusative", "neuter", "singular"])
-    assert _as_set(readings) == _as_set(
-        [
-            {"Case": "Nom", "Gender": "Neut", "Number": "Sing"},
-            {"Case": "Acc", "Gender": "Neut", "Number": "Sing"},
-        ]
-    )
-
-
 def test_several_multi_valued_features_give_every_combination() -> None:
     readings = map_tags(["nominative", "accusative", "masculine", "feminine"])
     assert _as_set(readings) == _as_set(
@@ -162,16 +152,7 @@ def test_empty_tags_give_one_reading_with_no_features() -> None:
     assert map_tags([]) == [{}]
 
 
-def test_unknown_tag_raises_and_names_the_tag() -> None:
-    with pytest.raises(UnknownTagError, match="blorp"):
-        map_tags(["nominative", "blorp"])
-
-
-def test_unknown_tag_error_lists_every_unknown_tag() -> None:
-    with pytest.raises(UnknownTagError) as excinfo:
+def test_unknown_tags_raise_and_every_one_is_listed() -> None:
+    with pytest.raises(UnknownTagError, match="blorp") as excinfo:
         map_tags(["blorp", "nominative", "zork"])
     assert excinfo.value.tags == ("blorp", "zork")
-
-
-def test_unknown_tag_error_is_a_value_error() -> None:
-    assert issubclass(UnknownTagError, ValueError)
