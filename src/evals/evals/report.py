@@ -8,7 +8,8 @@ from dataclasses import dataclass
 
 from priscianus.morphology.canonical import canonicalise
 from priscianus.morphology.lookup import Analysis
-from priscianus.verifier.classify import Claim, Verdict, classify
+from priscianus.verifier.claims import Claim
+from priscianus.verifier.classify import Verdict, classify
 from priscianus.verifier.index import MorphologyIndex
 
 from evals.index_agreement import Agreement
@@ -136,7 +137,9 @@ def ambiguity(rows: Sequence[Row], index: MorphologyIndex) -> AmbiguityHandling:
         gold = row.gold
         if any("," in value for value in gold["features"].values()):
             continue
-        found = classify(Claim(gold["form"], gold["lemma"], gold["features"]), index).verdict
+        found = classify(
+            Claim(gold["form"], gold["lemma"], gold.get("upos", "X"), gold["features"]), index
+        ).verdict
         if found in counts:
             counts[found][0] += 1
             counts[found][1] += bool(row.score and row.score["exact_match"])

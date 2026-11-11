@@ -4,6 +4,9 @@ import pytest
 from anthropic.types import Message, TextBlock
 from anthropic.types import Usage as AnthropicUsage
 from priscianus.llm.client import LLMClient, LLMResponse, Usage
+from priscianus.morphology.ud_features import canonical_values
+from priscianus.verifier.claims import UPOS_TAGS as SHARED_UPOS_TAGS
+from priscianus.verifier.claims import Claim, output_schema
 
 from evals.gold import parse_conllu
 from evals.raw_prompt import (
@@ -11,7 +14,7 @@ from evals.raw_prompt import (
     OUTPUT_SCHEMA,
     PROMPT_ID,
     SYSTEM_PROMPT,
-    Claim,
+    UPOS_TAGS,
     ParseFailure,
     RawResult,
     build_messages,
@@ -139,25 +142,25 @@ def test_prompt_id_is_versioned():
 
 def test_parses_a_valid_response():
     text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Person="1")})
-    assert parse_claim(response(text)) == Claim("cano", "VERB", {"Person": "1"})
+    assert parse_claim(response(text), "cano") == Claim("cano", "cano", "VERB", {"Person": "1"})
 
 
 def test_none_means_the_feature_is_left_out_of_the_claim():
     text = json.dumps({"lemma": "et", "upos": "CCONJ", "features": features()})
-    assert parse_claim(response(text)) == Claim("et", "CCONJ", {})
+    assert parse_claim(response(text), "et") == Claim("et", "et", "CCONJ", {})
 
 
 def test_a_response_that_leaves_a_feature_out_is_a_failure():
     partial = features()
     del partial["Degree"]
     text = json.dumps({"lemma": "cano", "upos": "VERB", "features": partial})
-    result = parse_claim(response(text))
+    result = parse_claim(response(text), "cano")
     assert isinstance(result, ParseFailure)
     assert "Degree" in result.reason
 
 
 def test_invalid_json_is_a_failure_not_an_exception():
-    result = parse_claim(response("I think it is cano"))
+    result = parse_claim(response("I think it is cano"), "cano")
     assert isinstance(result, ParseFailure)
     assert "JSON" in result.reason
 
@@ -166,33 +169,33 @@ def test_an_invented_feature_name_is_a_failure():
     text = json.dumps(
         {"lemma": "cano", "upos": "VERB", "features": {**features(), "Flavour": "Sweet"}}
     )
-    result = parse_claim(response(text))
+    result = parse_claim(response(text), "cano")
     assert isinstance(result, ParseFailure)
     assert "Flavour" in result.reason
 
 
 def test_a_value_outside_the_allowed_list_is_a_failure():
     text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Case="Nominative")})
-    assert isinstance(parse_claim(response(text)), ParseFailure)
+    assert isinstance(parse_claim(response(text), "cano"), ParseFailure)
 
 
 def test_an_unknown_upos_is_a_failure():
     text = json.dumps({"lemma": "cano", "upos": "VERBISH", "features": features()})
-    assert isinstance(parse_claim(response(text)), ParseFailure)
+    assert isinstance(parse_claim(response(text), "cano"), ParseFailure)
 
 
 def test_a_missing_field_is_a_failure():
-    assert isinstance(parse_claim(response(json.dumps({"lemma": "cano"}))), ParseFailure)
+    assert isinstance(parse_claim(response(json.dumps({"lemma": "cano"})), "cano"), ParseFailure)
 
 
 def test_an_empty_lemma_is_a_failure():
     text = json.dumps({"lemma": "", "upos": "VERB", "features": features()})
-    assert isinstance(parse_claim(response(text)), ParseFailure)
+    assert isinstance(parse_claim(response(text), "cano"), ParseFailure)
 
 
 def test_a_truncated_response_is_a_failure():
     truncated = LLMResponse([{"type": "text", "text": '{"lemma": "ca'}], "max_tokens", Usage())
-    result = parse_claim(truncated)
+    result = parse_claim(truncated, "cano")
     assert isinstance(result, ParseFailure)
     assert "max_tokens" in result.reason
 
@@ -244,7 +247,7 @@ def test_run_raw_sends_the_prompt_and_tags_the_result_with_its_id(tmp_path, toke
     assert result.prompt_id == PROMPT_ID
     assert result.model == "claude-haiku-5-5"
     assert result.raw_text == text
-    assert result.outcome == Claim("cano", "VERB", {"Person": "1"})
+    assert result.outcome == Claim("cano", "cano", "VERB", {"Person": "1"})
 
 
 def test_run_raw_records_a_bad_response_as_a_failure_and_asks_only_once(tmp_path, tokens):
@@ -256,7 +259,7 @@ def test_run_raw_records_a_bad_response_as_a_failure_and_asks_only_once(tmp_path
 
 
 def test_failure_counts_report_the_rate_and_the_kinds(tmp_path, tokens):
-    good = RawResult(PROMPT_ID, "m", "{}", Claim("cano", "VERB", {}))
+    good = RawResult(PROMPT_ID, "m", "{}", Claim("cano", "cano", "VERB", {}))
     bad = RawResult(PROMPT_ID, "m", "x", ParseFailure("invalid JSON: Expecting value"))
     cut = RawResult(PROMPT_ID, "m", "", ParseFailure("stopped with max_tokens"))
     counts = failure_counts([good, bad, bad, cut])
@@ -279,3 +282,27 @@ def test_run_raw_carries_the_usage_and_whether_the_cache_answered(tmp_path, toke
     assert not first.cache_hit
     assert again.cache_hit
     assert len(api.messages.calls) == 1
+
+
+def test_allowed_values_equal_the_shared_schemas():
+    assert {name: set(values) for name, values in ALLOWED_FEATURES.items()} == {
+        name: set(values) for name, values in canonical_values().items()
+    }
+    assert UPOS_TAGS == SHARED_UPOS_TAGS
+
+
+def test_the_claim_features_of_the_shared_schema_match_the_raw_schema():
+    shared = output_schema()["properties"]["claims"]["items"]["properties"]
+    raw = OUTPUT_SCHEMA["properties"]
+    assert shared["upos"] == raw["upos"]
+    assert set(shared["features"]["required"]) == set(raw["features"]["required"])
+    assert shared["features"]["additionalProperties"] is False
+    for name, spec in raw["features"]["properties"].items():
+        assert set(spec["enum"]) == set(shared["features"]["properties"][name]["enum"])
+
+
+def test_the_form_of_a_parsed_claim_comes_from_the_caller():
+    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features()})
+    result = parse_claim(response(text), "canimus")
+    assert isinstance(result, Claim)
+    assert result.form == "canimus"

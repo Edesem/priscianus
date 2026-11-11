@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 from priscianus.llm.client import LLMClient, SpendCapExceeded
 from priscianus.llm.config import cost_usd
-from priscianus.verifier.classify import Claim as VerifierClaim
 from priscianus.verifier.classify import classify
 from priscianus.verifier.index import MorphologyIndex
 from priscianus.verifier.matching import lemma_agrees
@@ -155,7 +154,7 @@ def _record(
             cost=cost,
         )
         return
-    verdict = classify(VerifierClaim(token.form, outcome.lemma, outcome.features), index)
+    verdict = classify(outcome, index)
     score = score_claim(token, outcome, deponent=_deponent(token, index))
     store.record_response(
         run_id,
@@ -163,7 +162,7 @@ def _record(
         raw_text=result.raw_text,
         format_error=None,
         claim={
-            "form": token.form,
+            "form": outcome.form,
             "lemma": outcome.lemma,
             "upos": outcome.upos,
             "features": outcome.features,
