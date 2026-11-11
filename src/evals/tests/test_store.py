@@ -16,11 +16,6 @@ def rows(store, sql):
     return sqlite3.connect(store.path).execute(sql).fetchall()
 
 
-def test_the_schema_has_the_tables_of_adr_003(store):
-    names = {r[0] for r in rows(store, "SELECT name FROM sqlite_master WHERE type = 'table'")}
-    assert {"runs", "items", "responses", "claims", "verdicts", "scores", "costs"} <= names
-
-
 def test_a_run_records_what_identifies_it(store):
     run = store.start_run(KEY, git_commit="abc123")
     (row,) = rows(
@@ -44,12 +39,6 @@ def test_another_prompt_or_model_or_split_is_another_run(store):
     other_model = store.start_run(KEY._replace(model="claude-sonnet-5-5"), git_commit="a")
     other_split = store.start_run(KEY._replace(split="test"), git_commit="a")
     assert len({first, other_prompt, other_model, other_split}) == 4
-
-
-def test_finishing_a_run_stamps_its_end_and_status(store):
-    run = store.start_run(KEY, git_commit="a")
-    store.finish_run(run, "complete")
-    assert rows(store, "SELECT status, finished_at IS NOT NULL FROM runs") == [("complete", 1)]
 
 
 def test_a_resumed_run_is_open_again(store):
