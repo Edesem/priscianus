@@ -117,7 +117,7 @@ def _lookup_form(form: str, index: MorphologyIndex) -> dict[str, Any]:
         )
     return {
         "form": form,
-        "readings": [_reading(r) for r in readings[:MAX_RESULTS]],
+        "readings": [reading_dict(r) for r in readings[:MAX_RESULTS]],
         "total": len(readings),
         "truncated": len(readings) > MAX_RESULTS,
     }
@@ -230,7 +230,8 @@ def _inflect_arguments(arguments: Any) -> tuple[str, dict[str, str], str | None]
     return lemma, features, pos
 
 
-def _reading(analysis: Analysis) -> dict[str, Any]:
+def reading_dict(analysis: Analysis) -> dict[str, Any]:
+    """One reading as `lookup_form` shows it."""
     features = canonicalise(analysis.features)
     reading: dict[str, Any] = {
         "features": "|".join(f"{name}={features[name]}" for name in sorted(features)),
