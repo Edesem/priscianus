@@ -251,10 +251,22 @@ def _from_message(msg: Any) -> LLMResponse:
 
 def _to_json(r: LLMResponse) -> str:
     return _canonical(
-        {"content": r.content, "stop_reason": r.stop_reason, "usage": r.usage.__dict__}
+        {
+            "content": r.content,
+            "stop_reason": r.stop_reason,
+            "usage": r.usage.__dict__,
+            "latency_ms": r.latency_ms,
+        }
     )
 
 
 def _from_json(s: str, *, cache_hit: bool) -> LLMResponse:
     d = json.loads(s)
-    return LLMResponse(d["content"], d["stop_reason"], Usage(**d["usage"]), cache_hit=cache_hit)
+    # Rows cached before the latency was stored have none.
+    return LLMResponse(
+        d["content"],
+        d["stop_reason"],
+        Usage(**d["usage"]),
+        cache_hit=cache_hit,
+        latency_ms=d.get("latency_ms", 0),
+    )
