@@ -1,5 +1,10 @@
-.PHONY: help setup dev backend frontend build test test-backend test-evals test-frontend lint format clean data eval-data eval eval-smoke parse
+.PHONY: help setup dev backend frontend build test coverage test-backend test-evals test-frontend lint format clean data eval-data eval eval-smoke parse
 .DEFAULT_GOAL := help
+
+# A foreign active virtualenv (e.g. pipenv) must not leak into uv's project envs.
+unexport VIRTUAL_ENV
+
+COV_MIN ?= 80
 
 BACKEND_PORT ?= 8000
 FRONTEND_PORT ?= 5173
@@ -27,6 +32,10 @@ build: ## Build the frontend for production
 
 test: test-backend test-evals test-frontend ## Run all tests
 
+coverage: ## Fail if backend or evals coverage is below COV_MIN (default 80); HTML in htmlcov/
+	cd src/backend && uv run pytest --cov-fail-under=$(COV_MIN) --cov-report=term-missing --cov-report=html
+	cd src/evals && uv run pytest --cov-fail-under=$(COV_MIN) --cov-report=term-missing --cov-report=html
+
 test-backend: ## Run pytest with coverage
 	cd src/backend && uv run pytest
 
@@ -47,7 +56,7 @@ format: ## Auto-fix Python
 
 clean: ## Remove caches and build output
 	find src \( -name node_modules -o -name .venv \) -prune -o -type d \( -name __pycache__ -o -name .pytest_cache -o -name .mypy_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +
-	rm -f src/backend/.coverage
+	rm -rf src/backend/.coverage src/evals/.coverage src/backend/htmlcov src/evals/htmlcov
 	rm -rf src/frontend/dist
 
 data: ## Download raw data into src/data/raw/, then build src/data/morphology.db
