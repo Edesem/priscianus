@@ -121,6 +121,7 @@ class LLMClient:
         *,
         system: str | None = None,
         tools: Sequence[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
         output_schema: dict[str, Any] | None = None,
         max_tokens: int = 1024,
         temperature: float | None = None,
@@ -137,6 +138,8 @@ class LLMClient:
             ]
         if tools:
             request["tools"] = list(tools)
+        if tool_choice is not None:
+            request["tool_choice"] = tool_choice
         if output_schema is not None:
             request["output_config"] = {"format": {"type": "json_schema", "schema": output_schema}}
         if temperature is not None:
@@ -248,10 +251,22 @@ def _from_message(msg: Any) -> LLMResponse:
 
 def _to_json(r: LLMResponse) -> str:
     return _canonical(
-        {"content": r.content, "stop_reason": r.stop_reason, "usage": r.usage.__dict__}
+        {
+            "content": r.content,
+            "stop_reason": r.stop_reason,
+            "usage": r.usage.__dict__,
+            "latency_ms": r.latency_ms,
+        }
     )
 
 
 def _from_json(s: str, *, cache_hit: bool) -> LLMResponse:
     d = json.loads(s)
-    return LLMResponse(d["content"], d["stop_reason"], Usage(**d["usage"]), cache_hit=cache_hit)
+    # Rows cached before the latency was stored have none.
+    return LLMResponse(
+        d["content"],
+        d["stop_reason"],
+        Usage(**d["usage"]),
+        cache_hit=cache_hit,
+        latency_ms=d.get("latency_ms", 0),
+    )

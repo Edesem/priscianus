@@ -90,6 +90,7 @@ def test_cache_persists_across_clients(tmp_path):
         {"messages": [{"role": "user", "content": "parse amant"}]},
         {"tools": [{"name": "lookup", "description": "d", "input_schema": {"type": "object"}}]},
         {"output_schema": {"type": "object"}},
+        {"tool_choice": {"type": "none"}},
         {"temperature": 0.5},
         {"max_tokens": 99},
         {"sample": 1},
@@ -124,10 +125,27 @@ def test_every_call_is_logged_with_cost_and_cache_hit(tmp_path):
 def test_a_response_carries_the_latency_that_was_logged(tmp_path):
     client = make(tmp_path, FakeAnthropic())
     fresh = client.complete(HAIKU, USER)
-    cached = client.complete(HAIKU, USER)
-    miss, _ = log_rows(tmp_path)
+    miss, _ = log_rows(tmp_path)[0], client.complete(HAIKU, USER)
     assert fresh.latency_ms == miss["latency_ms"]
-    assert cached.latency_ms == 0
+
+
+def test_a_cache_hit_carries_the_latency_of_the_original_call(tmp_path):
+    import time
+
+    class SlowMessages(FakeMessages):
+        def create(self, **kwargs):
+            time.sleep(0.03)
+            return super().create(**kwargs)
+
+    fake = FakeAnthropic()
+    fake.messages = SlowMessages([message()])
+    client = make(tmp_path, fake)
+    fresh = client.complete(HAIKU, USER)
+    cached = client.complete(HAIKU, USER)
+    assert fresh.latency_ms >= 30
+    assert cached.cache_hit is True
+    assert cached.latency_ms == fresh.latency_ms
+    assert log_rows(tmp_path)[1]["latency_ms"] < 30  # the log keeps the replay's own time
 
 
 def test_cached_and_written_tokens_are_logged_and_priced(tmp_path):
@@ -169,6 +187,15 @@ def test_output_schema_is_sent_and_parsed(tmp_path):
         "format": {"type": "json_schema", "schema": schema}
     }
     assert r.json() == {"lemma": "amo"}
+
+
+def test_tool_choice_is_sent_and_omitted_when_not_given(tmp_path):
+    fake = FakeAnthropic()
+    client = make(tmp_path, fake)
+    client.complete(HAIKU, USER)
+    client.complete(HAIKU, USER, tool_choice={"type": "none"})
+    assert "tool_choice" not in fake.messages.calls[0]
+    assert fake.messages.calls[1]["tool_choice"] == {"type": "none"}
 
 
 def test_tool_use_blocks_survive_the_cache(tmp_path):
