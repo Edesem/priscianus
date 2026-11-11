@@ -18,7 +18,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy priscianus
-      - run: uv run pytest
+      - run: uv run pytest --cov-fail-under=80
 
   evals:
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy evals
-      - run: uv run pytest
+      - run: uv run pytest --cov-fail-under=80
 
   frontend:
     runs-on: ubuntu-latest
