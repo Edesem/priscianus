@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -264,9 +265,13 @@ class EvalStore:
         claim: dict[str, Any] | None,
         verdict: str | None,
         score: dict[str, Any] | None,
-        cost: dict[str, Any],
+        cost: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     ) -> None:
         """Store one answered item whole: the response, and its claim, verdict, score and cost.
+
+        `cost` is one dict for each API call (or one dict for a single call). A call may carry
+        its `attempt` and `ordinal` (default 0), and the `list_usd` and `list_latency_ms` it had
+        when first made, which differ from `usd` and `latency_ms` on a cache hit.
 
         A response with a `format_error` has no claim, verdict or score. Raises
         `sqlite3.IntegrityError` if the run already has a response for the item.
@@ -305,22 +310,29 @@ class EvalStore:
                         _json(score["features"]),
                     ),
                 )
-            self._db.execute(
-                "INSERT INTO costs(response_id, model, input_tokens, output_tokens,"
-                " cache_read_tokens, cache_write_tokens, usd, cache_hit, latency_ms)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    response_id,
-                    cost["model"],
-                    cost["input_tokens"],
-                    cost["output_tokens"],
-                    cost["cache_read_tokens"],
-                    cost["cache_write_tokens"],
-                    cost["usd"],
-                    int(cost["cache_hit"]),
-                    cost["latency_ms"],
-                ),
-            )
+            calls = [cost] if isinstance(cost, Mapping) else cost
+            for call in calls:
+                self._db.execute(
+                    "INSERT INTO costs(response_id, model, input_tokens, output_tokens,"
+                    " cache_read_tokens, cache_write_tokens, usd, cache_hit, latency_ms,"
+                    " attempt, ordinal, list_usd, list_latency_ms)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        response_id,
+                        call["model"],
+                        call["input_tokens"],
+                        call["output_tokens"],
+                        call["cache_read_tokens"],
+                        call["cache_write_tokens"],
+                        call["usd"],
+                        int(call["cache_hit"]),
+                        call["latency_ms"],
+                        call.get("attempt", 0),
+                        call.get("ordinal", 0),
+                        call.get("list_usd"),
+                        call.get("list_latency_ms"),
+                    ),
+                )
 
     def run_rows(self, run_id: int) -> list[Row]:
         """Every answered item of the run, in item ID order."""
@@ -331,7 +343,9 @@ class EvalStore:
             " scores.lemma_match, scores.upos_match, scores.features_json, costs.usd,"
             " costs.cache_hit, costs.latency_ms"
             " FROM responses JOIN items ON items.id = responses.item_id"
-            " JOIN costs ON costs.response_id = responses.id"
+            " JOIN (SELECT response_id, SUM(usd) AS usd, MIN(cache_hit) AS cache_hit,"
+            " SUM(latency_ms) AS latency_ms FROM costs GROUP BY response_id) AS costs"
+            " ON costs.response_id = responses.id"
             " LEFT JOIN claims ON claims.response_id = responses.id"
             " LEFT JOIN verdicts ON verdicts.claim_id = claims.id"
             " LEFT JOIN scores ON scores.response_id = responses.id"
