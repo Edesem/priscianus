@@ -211,3 +211,148 @@ def test_arguments_that_are_not_an_object_are_invalid_input() -> None:
     block = {"type": "tool_use", "id": "toolu_1", "name": "lookup_form", "input": "loquitur"}
 
     assert_error(execute_tool_use(block, FakeIndex([])), "invalid_input")
+
+
+AMO_3PL_PERF = {
+    "Mood": "Ind",
+    "Number": "Plur",
+    "Person": "3",
+    "Tense": "Past",
+    "Aspect": "Perf",
+    "VerbForm": "Fin",
+    "Voice": "Act",
+}
+AMAVERUNT = reading("amāvērunt", "amo", AMO_3PL_PERF, pos="verb")
+AMARUNT = reading("amārunt", "amo", AMO_3PL_PERF, pos="verb")
+AMANDUS = reading(
+    "amandus",
+    "amo",
+    {"Case": "Nom", "Number": "Sing", "Tense": "Fut", "VerbForm": "Part", "Voice": "Pass"},
+    pos="verb",
+)
+ROSA_NOM = reading("rosa", "rosa", {"Case": "Nom", "Number": "Sing"})
+ROSA_PLACEHOLDER = reading("-", "rosa", {"Case": "Voc", "Number": "Plur"})
+
+
+def test_inflect_returns_the_forms_in_compact_sorted_json() -> None:
+    index = FakeIndex([AMAVERUNT, AMARUNT])
+    features = {"Mood": "Ind", "Number": "Plur", "Person": "3", "Tense": "Past", "Aspect": "Perf"}
+
+    result = run(index, "inflect", {"lemma": "amo", "features": features})
+
+    assert "is_error" not in result
+    assert result["content"] == (
+        '{"forms":["amāvērunt","amārunt"],"ignored":[],"lemma":"amo","total":2,"truncated":false}'
+    )
+
+
+def test_inflect_translates_the_canonical_gerundive_to_the_index_encoding() -> None:
+    result = run(FakeIndex([AMANDUS]), "inflect", {"lemma": "amo", "features": {"VerbForm": "Gdv"}})
+
+    assert content(result)["forms"] == ["amandus"]
+
+
+def test_inflect_names_the_features_it_dropped_because_the_index_does_not_record_them() -> None:
+    result = run(
+        FakeIndex([ROSA_NOM]),
+        "inflect",
+        {"lemma": "rosa", "features": {"Case": "Nom", "Gender": "Fem"}},
+    )
+
+    assert content(result)["forms"] == ["rosa"]
+    assert content(result)["ignored"] == ["Gender"]
+
+
+def test_inflect_ignores_the_passive_voice_of_a_deponent() -> None:
+    result = run(
+        FakeIndex([LOQUITUR]), "inflect", {"lemma": "loquor", "features": {"Voice": "Pass"}}
+    )
+
+    assert content(result)["forms"] == ["loquitur"]
+    assert content(result)["ignored"] == ["Voice"]
+
+
+def test_inflect_does_not_ignore_a_feature_that_is_a_real_gap() -> None:
+    index = FakeIndex([AMAVERUNT])
+
+    result = run(index, "inflect", {"lemma": "amo", "features": {"Voice": "Pass"}})
+
+    assert_error(result, "no_such_form")
+
+
+def test_inflect_filters_the_placeholder_form() -> None:
+    index = FakeIndex([ROSA_NOM, ROSA_PLACEHOLDER])
+
+    assert_error(
+        run(index, "inflect", {"lemma": "rosa", "features": {"Case": "Voc"}}), "no_such_form"
+    )
+
+
+def test_inflect_on_a_lemma_the_index_lacks_is_an_error_that_is_not_a_verdict() -> None:
+    body = assert_error(
+        run(FakeIndex([ROSA_NOM]), "inflect", {"lemma": "flurbo", "features": {}}), "unknown_lemma"
+    )
+
+    assert "not mean" in body["message"]
+
+
+def test_inflect_without_a_matching_form_says_the_index_may_have_a_gap() -> None:
+    body = assert_error(
+        run(FakeIndex([ROSA_NOM]), "inflect", {"lemma": "rosa", "features": {"Case": "Abl"}}),
+        "no_such_form",
+    )
+
+    assert "gap" in body["message"]
+
+
+def test_inflect_passes_pos_to_the_index() -> None:
+    noun = reading("malum", "malum", {"Case": "Nom"}, pos="noun")
+    adj = reading("malum", "malum", {"Case": "Nom"}, pos="adj")
+    forms = content(
+        run(FakeIndex([noun, adj]), "inflect", {"lemma": "malum", "features": {}, "pos": "adj"})
+    )
+
+    assert forms["total"] == 1
+
+
+def test_inflect_shows_at_most_fifty_forms_and_reports_the_real_total() -> None:
+    many = [reading(f"form{i}", "lemma", {"Case": "Nom"}) for i in range(60)]
+
+    body = content(run(FakeIndex(many), "inflect", {"lemma": "lemma", "features": {"Case": "Nom"}}))
+
+    assert len(body["forms"]) == 50
+    assert body["total"] == 60 and body["truncated"] is True
+
+
+def test_inflect_rejects_arguments_that_fail_validation() -> None:
+    index = FakeIndex([ROSA_NOM])
+    bad_arguments = [
+        {},
+        {"lemma": "rosa"},
+        {"lemma": 3, "features": {}},
+        {"lemma": "", "features": {}},
+        {"lemma": "rosa", "features": []},
+        {"lemma": "rosa", "features": {"Colour": "Red"}},
+        {"lemma": "rosa", "features": {"Case": "Dative"}},
+        {"lemma": "rosa", "features": {"Case": "None"}},
+        {"lemma": "rosa", "features": {"Case": 1}},
+        {"lemma": "rosa", "features": {}, "pos": 3},
+        {"lemma": "rosa", "features": {}, "extra": 1},
+    ]
+
+    for bad in bad_arguments:
+        assert_error(run(index, "inflect", bad), "invalid_input")
+
+
+def test_inflect_ignores_the_person_of_a_pronoun_and_other_lemmas_that_share_the_form() -> None:
+    ego = reading("mihi", "ego", {"Case": "Dat", "Number": "Sing"}, pos="pron")
+    other = reading("mihi", "mihi", {"Case": "Dat"}, pos="noun")
+
+    result = run(
+        FakeIndex([ego, other]),
+        "inflect",
+        {"lemma": "ego", "features": {"Case": "Dat", "Person": "1"}},
+    )
+
+    assert content(result)["forms"] == ["mihi"]
+    assert content(result)["ignored"] == ["Person"]
