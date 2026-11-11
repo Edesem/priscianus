@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -54,3 +55,16 @@ def test_sqlite_index_inflects_a_lemma_and_raises_when_no_form_fits(tmp_path: Pa
     assert index.inflect("rosa", {"Case": "Acc"}, pos="noun") == ["rosam"]
     with pytest.raises(NoSuchFormError):
         index.inflect("rosa", {"Case": "Voc"})
+
+
+def test_sqlite_index_reports_the_build_hash_stored_when_it_was_built(tmp_path: Path) -> None:
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text(json.dumps(ROSA, ensure_ascii=False) + "\n")
+    db = tmp_path / "morphology.db"
+    build_index(dump, db)
+    con = sqlite3.connect(db)
+    (stored,) = con.execute("SELECT value FROM meta WHERE key = 'build_hash'").fetchone()
+    con.close()
+
+    assert SqliteIndex(db).build_hash == stored
+    assert len(stored) == 64

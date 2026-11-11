@@ -19,6 +19,7 @@ from evals.index_agreement import render_report as render_agreement
 from evals.parse_set import DEFAULT_SEED, build_set, load_parse_set
 from evals.raw_prompt import PROMPT_ID
 from evals.report import render_report
+from evals.reverify import reverify_run
 from evals.run import MODE, SET_NAME, item_id, run_parse
 from evals.store import EvalStore, RunKey
 
@@ -43,6 +44,11 @@ def _git_commit() -> str:
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
     return out.stdout.strip()
+
+
+def _build_hash(index: MorphologyIndex) -> str:
+    """The build the index was made from; "unknown" for an index that does not say."""
+    return str(getattr(index, "build_hash", "unknown"))
 
 
 def _positive_int(text: str) -> int:
@@ -85,6 +91,11 @@ def main(
     run.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
     run.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
     run.add_argument("--llm-db", type=Path, default=_RESULTS / "llm.db")
+    rescore = commands.add_parser(
+        "score", help="Judge the stored claims of a run again against the index, without the model"
+    )
+    rescore.add_argument("--run", type=int, required=True, metavar="run-id")
+    rescore.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
     report = commands.add_parser("report", help="Write a markdown report for stored runs")
     report.add_argument("runs", nargs="+", type=int, metavar="run-id")
     report.add_argument("--out", type=Path, help="Write the report here instead of printing it")
@@ -92,16 +103,42 @@ def main(
     report.add_argument("--manifest", type=Path, default=_DATA / "eval_sets" / "parse-v1.jsonl")
     report.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
     report.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
+    report.add_argument(
+        "--rescored",
+        action="store_true",
+        help="Use the verdicts that `score` stored under the current index build",
+    )
     options = parser.parse_args(argv)
+
+    if options.command == "score":
+        store = EvalStore(options.store)
+        morphology = index or SqliteIndex()
+        build_id = _build_hash(morphology)
+        try:
+            info = store.run_info(options.run)
+        except KeyError:
+            print(f"no run {options.run} in {options.store}", file=sys.stderr)
+            return 2
+        outcome = reverify_run(store, options.run, morphology, build_id)
+        print(
+            f"Run {info.run_id} ({info.mode}): judged {outcome.claims} "
+            f"claim{'s' if outcome.claims != 1 else ''} again under index build {build_id}, "
+            f"{outcome.changed} changed. The verdicts stored with the run are kept; "
+            "`report --rescored` shows these."
+        )
+        return 0
 
     if options.command == "report":
         store = EvalStore(options.store)
         try:
-            runs = [(store.run_info(r), store.run_rows(r)) for r in options.runs]
+            morphology = index or SqliteIndex()
+            under = _build_hash(morphology) if options.rescored else None
+            runs = [
+                (store.run_info(r), store.run_rows(r, verdicts_under=under)) for r in options.runs
+            ]
         except KeyError as missing:
             print(f"no run {missing.args[0]} in {options.store}", file=sys.stderr)
             return 2
-        morphology = index or SqliteIndex()
         ceiling: dict[str, Agreement] | None = None
         try:
             items = load_parse_set(options.manifest, options.ud_dir)
