@@ -199,18 +199,15 @@ def test_lookup_form_rejects_arguments_that_fail_the_schema() -> None:
 
     for bad in ({}, {"form": 3}, {"form": "loquitur", "extra": 1}, {"form": "-"}, {"form": "  "}):
         assert_error(run(index, "lookup_form", bad), "invalid_input")
+    # Arguments that are not an object at all are invalid too.
+    block = {"type": "tool_use", "id": "toolu_1", "name": "lookup_form", "input": "loquitur"}
+    assert_error(execute_tool_use(block, index), "invalid_input")
 
 
 def test_an_unknown_tool_is_an_error_that_names_the_available_tools() -> None:
     body = assert_error(run(FakeIndex([]), "list_lemmas", {}), "unknown_tool")
 
     assert "lookup_form" in body["message"] and "inflect" in body["message"]
-
-
-def test_arguments_that_are_not_an_object_are_invalid_input() -> None:
-    block = {"type": "tool_use", "id": "toolu_1", "name": "lookup_form", "input": "loquitur"}
-
-    assert_error(execute_tool_use(block, FakeIndex([])), "invalid_input")
 
 
 AMO_3PL_PERF = {

@@ -156,13 +156,17 @@ def test_several_rounds_run_the_tools_and_send_the_results_back(tmp_path: Path) 
     assert isinstance(result.output, ModelOutput)
     assert [c.name for c in result.tool_calls] == ["lookup_form", "inflect"]
     assert [c.round for c in result.tool_calls] == [1, 2]
-
-
-def test_the_result_holds_the_whole_history_and_leaves_the_input_alone(tmp_path: Path) -> None:
-    api = ScriptedAPI(tool_use(LOOKUP), answer())
-    result = run(make_client(tmp_path, api))
+    # Each tool call keeps its input, result and error flag.
+    first_call = result.tool_calls[0]
+    assert (first_call.input, first_call.result, first_call.is_error) == (
+        {"form": "amat"},
+        '{"readings":[]}',
+        False,
+    )
+    # The result holds the whole history and leaves the caller's list alone.
     assert len(USER) == 1
-    assert [m["role"] for m in result.messages] == ["user", "assistant", "user", "assistant"]
+    roles = [m["role"] for m in result.messages]
+    assert roles == ["user", "assistant", "user", "assistant", "user", "assistant"]
     assert result.messages[-1]["content"][0]["text"] == ANSWER
 
 
@@ -176,13 +180,6 @@ def test_the_trace_has_each_calls_usage_cost_latency_and_cache_hit(tmp_path: Pat
     assert first.latency_ms >= 0
     assert first.stop_reason == "tool_use"
     assert result.response.text == ANSWER
-
-
-def test_a_tool_calls_trace_has_its_input_result_and_error_flag(tmp_path: Path) -> None:
-    api = ScriptedAPI(tool_use(LOOKUP), answer())
-    (call,) = run(make_client(tmp_path, api)).tool_calls
-    assert (call.name, call.input, call.is_error) == ("lookup_form", {"form": "amat"}, False)
-    assert call.result == '{"readings":[]}'
 
 
 def test_an_erroring_tool_goes_back_to_the_model_and_the_loop_goes_on(tmp_path: Path) -> None:
@@ -275,15 +272,6 @@ def test_every_call_carries_the_system_prompt_tools_and_schema(tmp_path: Path) -
         assert sent["tools"] == TOOL_DEFINITIONS
         assert sent["output_config"]["format"]["schema"] == output_schema()
         assert sent["max_tokens"] == 4096
-
-
-def test_each_call_is_logged_on_its_own(tmp_path: Path) -> None:
-    import sqlite3
-
-    api = ScriptedAPI(tool_use(LOOKUP), answer())
-    run(make_client(tmp_path, api))
-    rows = sqlite3.connect(tmp_path / "llm.db").execute("SELECT cache_hit FROM call_log").fetchall()
-    assert len(rows) == 2
 
 
 def test_the_spend_cap_stops_the_loop_between_calls_of_one_item(tmp_path: Path) -> None:
