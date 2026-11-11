@@ -30,6 +30,16 @@ class SqliteIndex:
     def __init__(self, db: Path = DEFAULT_DB) -> None:
         self._db = db
 
+    @property
+    def build_hash(self) -> str:
+        """The hash the build stored in the file's `meta` table: what the index was built from."""
+        con = sqlite3.connect(self._db)
+        try:
+            row = con.execute("SELECT value FROM meta WHERE key = 'build_hash'").fetchone()
+        finally:
+            con.close()
+        return str(row[0])
+
     def analyse(self, form: str) -> list[Analysis]:
         return lookup_form(form, self._db)
 
