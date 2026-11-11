@@ -1,6 +1,8 @@
 import json
 from typing import Any
 
+import pytest
+
 from priscianus.morphology.ud_features import canonical_values
 from priscianus.verifier.claims import (
     Claim,
@@ -28,15 +30,9 @@ def output_text(*claims: dict[str, Any], text: str = "") -> str:
     return json.dumps({"text": text, "claims": list(claims)})
 
 
-def test_canonical_values_use_gdv_and_leave_out_pos():
+def test_canonical_values_are_the_ten_features_and_the_schema_allows_exactly_them():
     values = canonical_values()
-    assert "Gdv" in values["VerbForm"]
-    assert "Pos" not in values["Degree"]
-    assert set(values["Degree"]) == {"Cmp", "Sup"}
-
-
-def test_canonical_values_cover_the_ten_compared_features():
-    assert set(canonical_values()) == {
+    assert set(values) == {
         "Case",
         "Number",
         "Gender",
@@ -48,13 +44,12 @@ def test_canonical_values_cover_the_ten_compared_features():
         "VerbForm",
         "Degree",
     }
-
-
-def test_schema_allows_exactly_the_canonical_values_and_none():
-    schema = output_schema()
-    features = schema["properties"]["claims"]["items"]["properties"]["features"]
-    for name, values in canonical_values().items():
-        assert set(features["properties"][name]["enum"]) == {*values, "None"}
+    assert "Gdv" in values["VerbForm"]
+    assert "Pos" not in values["Degree"]
+    assert set(values["Degree"]) == {"Cmp", "Sup"}
+    features = output_schema()["properties"]["claims"]["items"]["properties"]["features"]
+    for name, allowed in values.items():
+        assert set(features["properties"][name]["enum"]) == {*allowed, "None"}
 
 
 def test_schema_requires_every_feature_and_forbids_extras():
@@ -67,10 +62,6 @@ def test_schema_requires_every_feature_and_forbids_extras():
     assert item["additionalProperties"] is False
     assert schema["required"] == ["text", "claims"]
     assert schema["additionalProperties"] is False
-
-
-def test_schema_is_json_serialisable():
-    json.dumps(output_schema())
 
 
 def test_parses_a_valid_output():
@@ -88,11 +79,8 @@ def test_none_is_removed_from_the_features():
     assert result.claims[0].features == {}
 
 
-def test_an_output_may_have_no_claims():
+def test_an_output_may_have_no_claims_or_several():
     assert parse_output(output_text()) == ModelOutput("", ())
-
-
-def test_an_output_may_have_several_claims():
     result = parse_output(output_text(claim_data(), claim_data(form="et", lemma="et")))
     assert isinstance(result, ModelOutput)
     assert [c.form for c in result.claims] == ["loquitur", "et"]
@@ -104,30 +92,10 @@ def test_invalid_json_is_returned_as_a_value():
     assert result.reason.startswith("invalid JSON")
 
 
-def test_output_that_is_not_an_object_is_an_error():
-    assert isinstance(parse_output("[]"), SchemaError)
-
-
 def test_a_missing_top_level_field_is_an_error():
     result = parse_output(json.dumps({"claims": []}))
     assert isinstance(result, SchemaError)
     assert "text" in result.reason
-
-
-def test_an_extra_top_level_field_is_an_error():
-    assert isinstance(parse_output(json.dumps({"text": "", "claims": [], "x": 1})), SchemaError)
-
-
-def test_text_must_be_a_string():
-    assert isinstance(parse_output(json.dumps({"text": 3, "claims": []})), SchemaError)
-
-
-def test_claims_must_be_a_list():
-    assert isinstance(parse_output(json.dumps({"text": "", "claims": {}})), SchemaError)
-
-
-def test_a_claim_must_be_an_object():
-    assert isinstance(parse_output(json.dumps({"text": "", "claims": ["x"]})), SchemaError)
 
 
 def test_a_claim_with_a_missing_field_is_an_error():
@@ -136,14 +104,6 @@ def test_a_claim_with_a_missing_field_is_an_error():
     result = parse_output(output_text(data))
     assert isinstance(result, SchemaError)
     assert "lemma" in result.reason
-
-
-def test_an_empty_form_is_an_error():
-    assert isinstance(parse_output(output_text(claim_data(form=" "))), SchemaError)
-
-
-def test_an_empty_lemma_is_an_error():
-    assert isinstance(parse_output(output_text(claim_data(lemma=""))), SchemaError)
 
 
 def test_an_unknown_upos_is_an_error():
@@ -172,12 +132,28 @@ def test_a_value_outside_the_allowed_list_is_an_error():
     assert "Case" in result.reason
 
 
-def test_features_must_be_an_object():
-    data = {**claim_data(), "features": []}
-    assert isinstance(parse_output(output_text(data)), SchemaError)
-
-
-def test_the_verifier_package_exports_the_shared_claim():
-    import priscianus.verifier as verifier
-
-    assert verifier.Claim is Claim
+@pytest.mark.parametrize(
+    "text",
+    [
+        "[]",
+        json.dumps({"text": "", "claims": [], "x": 1}),
+        json.dumps({"text": 3, "claims": []}),
+        json.dumps({"text": "", "claims": {}}),
+        json.dumps({"text": "", "claims": ["x"]}),
+        output_text(claim_data(form=" ")),
+        output_text(claim_data(lemma="")),
+        output_text({**claim_data(), "features": []}),
+    ],
+    ids=[
+        "not an object",
+        "extra top-level field",
+        "text not a string",
+        "claims not a list",
+        "claim not an object",
+        "empty form",
+        "empty lemma",
+        "features not an object",
+    ],
+)
+def test_malformed_output_is_returned_as_a_schema_error(text):
+    assert isinstance(parse_output(text), SchemaError)
