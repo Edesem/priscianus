@@ -618,7 +618,8 @@ class EvalStore:
                 " scores.upos_match, scores.features_json FROM claims"
                 " LEFT JOIN verdicts ON verdicts.claim_id = claims.id"
                 " AND verdicts.index_build_hash IS ?"
-                " LEFT JOIN scores ON scores.claim_id = claims.id"
+                " LEFT JOIN scores ON scores.response_id = claims.response_id"
+                " AND (scores.claim_id = claims.id OR scores.claim_id IS NULL)"
                 " WHERE claims.response_id = ? ORDER BY claims.attempt",
                 (build, response_id),
             )

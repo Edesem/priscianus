@@ -131,3 +131,14 @@ def test_a_raw_run_stored_before_the_change_loads_as_it_was(legacy_path):
     }
     assert (row.usd, row.cache_hit, row.latency_ms) == (0.001, False, 250)
     assert store.run_info(1).mode == "raw"
+
+
+def test_a_response_stored_before_the_change_reads_back_with_its_score(legacy_path):
+    (claim,) = EvalStore(legacy_path).read_response(1, "perseus/s1/4").claims
+    assert claim.score == {
+        "exact_match": True,
+        "lemma_match": True,
+        "upos_match": True,
+        "features": {"Person": True},
+    }
+    assert (claim.attempt, claim.is_final, claim.verdict) == (0, True, "verified")
