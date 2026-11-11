@@ -1,11 +1,14 @@
-"""Give a claim about a form a verdict by checking it against the morphology index (ADR-003)."""
+"""Give a claim about a form a verdict by checking it against the morphology index (ADR-003).
 
-from collections.abc import Mapping
+`classify` ignores the claim's `upos`: the index's parts of speech are Wiktionary's (ADR-004).
+"""
+
 from dataclasses import dataclass
 from enum import Enum
 
 from priscianus.morphology.lookup import Analysis
 from priscianus.morphology.normaliser import key_loose
+from priscianus.verifier.claims import Claim
 from priscianus.verifier.index import MorphologyIndex
 from priscianus.verifier.matching import (
     NOUN_POS,
@@ -23,15 +26,6 @@ class Verdict(Enum):
     AMBIGUOUS = "ambiguous"
     CONTRADICTED = "contradicted"
     UNKNOWN = "unknown"
-
-
-@dataclass(frozen=True)
-class Claim:
-    """A parse of one word: `features` are UD names and values."""
-
-    form: str
-    lemma: str
-    features: Mapping[str, str]
 
 
 @dataclass(frozen=True)
