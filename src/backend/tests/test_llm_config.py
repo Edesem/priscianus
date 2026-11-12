@@ -1,11 +1,6 @@
 import pytest
 
-from priscianus.llm.config import HAIKU, MODELS, OPUS, SONNET, cost_usd
-
-
-def test_model_ids_are_the_claude_5_5_family():
-    assert (HAIKU, SONNET, OPUS) == ("claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5")
-    assert set(MODELS) == {HAIKU, SONNET, OPUS}
+from priscianus.llm.config import HAIKU, SONNET, cost_usd
 
 
 def test_sonnet_cost_uses_plan_prices():

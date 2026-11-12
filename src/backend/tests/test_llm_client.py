@@ -65,7 +65,7 @@ def test_complete_returns_text_and_usage(tmp_path):
     assert r.cache_hit is False
 
 
-def test_identical_request_is_served_from_cache_without_an_api_call(tmp_path):
+def test_identical_request_is_served_from_cache_even_by_a_new_client(tmp_path):
     fake = FakeAnthropic()
     client = make(tmp_path, fake)
     first = client.complete(HAIKU, USER, system="s")
@@ -73,12 +73,8 @@ def test_identical_request_is_served_from_cache_without_an_api_call(tmp_path):
     assert len(fake.messages.calls) == 1
     assert second.cache_hit is True
     assert second.text == first.text
-
-
-def test_cache_persists_across_clients(tmp_path):
-    fake = FakeAnthropic()
-    make(tmp_path, fake).complete(HAIKU, USER)
-    make(tmp_path, fake).complete(HAIKU, USER)
+    # The cache lives in the database, so a new client reuses it too.
+    make(tmp_path, fake).complete(HAIKU, USER, system="s")
     assert len(fake.messages.calls) == 1
 
 
@@ -122,14 +118,7 @@ def test_every_call_is_logged_with_cost_and_cache_hit(tmp_path):
     assert hit["prompt_hash"] == miss["prompt_hash"]
 
 
-def test_a_response_carries_the_latency_that_was_logged(tmp_path):
-    client = make(tmp_path, FakeAnthropic())
-    fresh = client.complete(HAIKU, USER)
-    miss, _ = log_rows(tmp_path)[0], client.complete(HAIKU, USER)
-    assert fresh.latency_ms == miss["latency_ms"]
-
-
-def test_a_cache_hit_carries_the_latency_of_the_original_call(tmp_path):
+def test_a_response_carries_its_logged_latency_and_a_cache_hit_keeps_the_original(tmp_path):
     import time
 
     class SlowMessages(FakeMessages):
@@ -143,6 +132,7 @@ def test_a_cache_hit_carries_the_latency_of_the_original_call(tmp_path):
     fresh = client.complete(HAIKU, USER)
     cached = client.complete(HAIKU, USER)
     assert fresh.latency_ms >= 30
+    assert fresh.latency_ms == log_rows(tmp_path)[0]["latency_ms"]
     assert cached.cache_hit is True
     assert cached.latency_ms == fresh.latency_ms
     assert log_rows(tmp_path)[1]["latency_ms"] < 30  # the log keeps the replay's own time
