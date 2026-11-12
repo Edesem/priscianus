@@ -5,7 +5,9 @@ import sqlite3
 import pytest
 
 from evals.__main__ import main
+from evals.tools_prompt import PROMPT_ID as TOOLS_PROMPT_ID
 from tests.test_run import CONLLU, FakeIndex, FakeMessages, client_for
+from tests.test_run_tools import ToolCallingMessages
 
 
 def sha(text):
@@ -131,10 +133,47 @@ def test_run_exits_non_zero_when_stopped_by_the_cost_cap(workspace, capsys):
     assert "stopped: max cost" in capsys.readouterr().out
 
 
-def test_run_only_supports_the_raw_mode_on_the_parse_set(workspace):
+def test_cli_runs_tools_mode_with_the_same_options_as_raw(workspace, capsys):
     tmp_path, manifest, ud = workspace
+    api = type("Api", (), {"messages": ToolCallingMessages()})()
+    code = main(
+        [
+            "run",
+            "--mode",
+            "tools",
+            "--set",
+            "parse",
+            "--limit",
+            "2",
+            "--max-cost",
+            "5",
+            "--concurrency",
+            "2",
+            "--manifest",
+            str(manifest),
+            "--ud-dir",
+            str(ud),
+            "--store",
+            str(tmp_path / "evals.db"),
+            "--llm-db",
+            str(tmp_path / "llm.db"),
+        ],
+        make_client=lambda *, spend_cap_usd, db_path: client_for(
+            tmp_path, api, spend_cap_usd=spend_cap_usd
+        ),
+        index=FakeIndex(),
+    )
+    assert code == 0
+    assert "answered 2" in capsys.readouterr().out
+    assert len(api.messages.calls) == 4
+    assert sqlite3.connect(tmp_path / "evals.db").execute(
+        "SELECT mode, prompt_id FROM runs"
+    ).fetchall() == [("tools", TOOLS_PROMPT_ID)]
+
+
+def test_run_rejects_a_mode_that_does_not_exist_yet(workspace):
     with pytest.raises(SystemExit):
-        main(["run", "--mode", "tools", "--set", "parse"])
+        main(["run", "--mode", "verified", "--set", "parse"])
 
 
 @pytest.mark.parametrize("value", ["0", "-2"])
