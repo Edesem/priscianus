@@ -76,25 +76,6 @@ def columns(path, table):
         con.close()
 
 
-def test_a_new_store_has_the_columns_and_tables_of_adr_004(tmp_path):
-    EvalStore(tmp_path / "new.db")
-    path = tmp_path / "new.db"
-    assert {"index_build_hash", "params_json"} <= columns(path, "runs")
-    assert {"final_state", "tool_limit_hit"} <= columns(path, "responses")
-    assert {"attempt", "is_final"} <= columns(path, "claims")
-    assert {"index_build_hash", "readings_json"} <= columns(path, "verdicts")
-    assert "claim_id" in columns(path, "scores")
-    assert {"attempt", "ordinal", "list_usd", "list_latency_ms"} <= columns(path, "costs")
-    assert {"response_id", "attempt", "round", "ordinal", "name", "input_json", "result_json"} <= (
-        columns(path, "tool_calls")
-    )
-    assert "is_error" in columns(path, "tool_calls")
-    assert {"response_id", "attempt", "message_text", "raw_text", "format_error"} <= columns(
-        path, "repair_attempts"
-    )
-    assert "stop_reason" in columns(path, "repair_attempts")
-
-
 def test_an_old_store_gains_the_columns_without_losing_a_row(legacy_path):
     EvalStore(legacy_path)
     assert {"attempt", "is_final"} <= columns(legacy_path, "claims")

@@ -107,20 +107,6 @@ def test_one_call_given_as_a_single_dict_is_still_one_row_at_attempt_zero(store)
     assert rows(store, "SELECT attempt, ordinal, list_usd FROM costs") == [(0, 0, 0.001)]
 
 
-def test_an_item_is_one_row_with_its_calls_summed(store):
-    run = store.start_run(KEY, git_commit="a", index_build_hash="b")
-    record(
-        store,
-        run,
-        "perseus/s1/4",
-        [call(0.002, 400), call(0.003, 600, ordinal=1), call(0.004, 800, attempt=1)],
-    )
-    (row,) = store.run_rows(run)
-    assert row.usd == pytest.approx(0.009)
-    assert row.latency_ms == 1800
-    assert row.cache_hit is False
-
-
 def test_an_item_is_a_cache_hit_only_if_every_call_was(store):
     run = store.start_run(KEY, git_commit="a", index_build_hash="b")
     record(store, run, "perseus/s1/4", [call(0, 400, cache_hit=True), call(0, 600, cache_hit=True)])

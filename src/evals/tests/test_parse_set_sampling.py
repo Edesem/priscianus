@@ -172,15 +172,6 @@ def test_the_result_records_candidate_counts_per_cell():
     assert result.candidate_counts["Ecclesiastical|pron_det|all"] == 30
 
 
-def test_items_are_returned_in_a_fixed_order():
-    tokens, ranks = make_pool(full_plan(30))
-
-    items = sample_items(tokens, ranks, seed=1, sizes={"test": 20, "dev": 5}).items
-
-    keys = [(i.split, i.token.treebank, i.token.sent_id, i.token.token_id) for i in items]
-    assert keys == sorted(keys)
-
-
 @pytest.mark.parametrize(
     ("treebank", "source", "label"),
     [

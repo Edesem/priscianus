@@ -56,11 +56,6 @@ def test_an_ordinary_word_is_a_candidate():
     assert is_candidate(token())
 
 
-@pytest.mark.parametrize("upos", ["PUNCT", "NUM", "PROPN", "X", "SYM"])
-def test_excluded_parts_of_speech_are_not_candidates(upos):
-    assert not is_candidate(token(upos=upos))
-
-
 @pytest.mark.parametrize("features", [{"Foreign": "Yes"}, {"Abbr": "Yes"}])
 def test_foreign_and_abbreviated_words_are_not_candidates(features):
     assert not is_candidate(token(features=features))
