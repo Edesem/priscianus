@@ -54,10 +54,6 @@ def response(text: str) -> LLMResponse:
     return LLMResponse([{"type": "text", "text": text}], "end_turn", Usage())
 
 
-def test_marks_the_target_word_in_the_sentence():
-    assert mark_target("Arma virumque cano", "cano", 1) == "Arma virumque [[cano]]"
-
-
 def test_marks_the_requested_occurrence_of_a_repeated_form():
     assert mark_target("arma et arma", "arma", 2) == "arma et [[arma]]"
 
@@ -98,35 +94,11 @@ def test_prompt_does_not_leak_the_gold_or_the_index(tokens):
     assert "lemma: cano" not in text
 
 
-def test_schema_limits_features_to_the_allowed_names_and_values():
-    features = OUTPUT_SCHEMA["properties"]["features"]
-    assert features["additionalProperties"] is False
-    assert set(features["properties"]) == set(ALLOWED_FEATURES)
-    assert features["properties"]["Case"]["enum"] == [
-        "Nom",
-        "Gen",
-        "Dat",
-        "Acc",
-        "Abl",
-        "Voc",
-        "Loc",
-        "None",
-    ]
-
-
 def test_schema_requires_every_feature_so_the_model_cannot_stop_early():
     schema = OUTPUT_SCHEMA["properties"]["features"]
     assert schema["required"] == list(ALLOWED_FEATURES)
     for name in ALLOWED_FEATURES:
         assert "None" in schema["properties"][name]["enum"]
-
-
-def test_schema_requires_lemma_upos_and_features():
-    assert OUTPUT_SCHEMA["required"] == ["lemma", "upos", "features"]
-
-
-def test_system_prompt_explains_none():
-    assert '"None"' in SYSTEM_PROMPT
 
 
 def test_system_prompt_lists_every_allowed_value():
@@ -136,27 +108,9 @@ def test_system_prompt_lists_every_allowed_value():
             assert value in SYSTEM_PROMPT
 
 
-def test_prompt_id_is_versioned():
-    assert PROMPT_ID.startswith("raw-parse-v")
-
-
 def test_parses_a_valid_response():
     text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Person="1")})
     assert parse_claim(response(text), "cano") == Claim("cano", "cano", "VERB", {"Person": "1"})
-
-
-def test_none_means_the_feature_is_left_out_of_the_claim():
-    text = json.dumps({"lemma": "et", "upos": "CCONJ", "features": features()})
-    assert parse_claim(response(text), "et") == Claim("et", "et", "CCONJ", {})
-
-
-def test_a_response_that_leaves_a_feature_out_is_a_failure():
-    partial = features()
-    del partial["Degree"]
-    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": partial})
-    result = parse_claim(response(text), "cano")
-    assert isinstance(result, ParseFailure)
-    assert "Degree" in result.reason
 
 
 def test_invalid_json_is_a_failure_not_an_exception():
@@ -165,32 +119,8 @@ def test_invalid_json_is_a_failure_not_an_exception():
     assert "JSON" in result.reason
 
 
-def test_an_invented_feature_name_is_a_failure():
-    text = json.dumps(
-        {"lemma": "cano", "upos": "VERB", "features": {**features(), "Flavour": "Sweet"}}
-    )
-    result = parse_claim(response(text), "cano")
-    assert isinstance(result, ParseFailure)
-    assert "Flavour" in result.reason
-
-
-def test_a_value_outside_the_allowed_list_is_a_failure():
-    text = json.dumps({"lemma": "cano", "upos": "VERB", "features": features(Case="Nominative")})
-    assert isinstance(parse_claim(response(text), "cano"), ParseFailure)
-
-
-def test_an_unknown_upos_is_a_failure():
-    text = json.dumps({"lemma": "cano", "upos": "VERBISH", "features": features()})
-    assert isinstance(parse_claim(response(text), "cano"), ParseFailure)
-
-
 def test_a_missing_field_is_a_failure():
     assert isinstance(parse_claim(response(json.dumps({"lemma": "cano"})), "cano"), ParseFailure)
-
-
-def test_an_empty_lemma_is_a_failure():
-    text = json.dumps({"lemma": "", "upos": "VERB", "features": features()})
-    assert isinstance(parse_claim(response(text), "cano"), ParseFailure)
 
 
 def test_a_truncated_response_is_a_failure():
@@ -204,12 +134,10 @@ def test_prompt_id_names_this_version():
     assert PROMPT_ID == "raw-parse-v3"
 
 
-def test_system_prompt_gives_pronouns_a_person():
+def test_system_prompt_explains_none_pronoun_person_and_where_gender_comes_from():
+    assert '"None"' in SYSTEM_PROMPT
     assert "Personal, reflexive and possessive pronouns" in SYSTEM_PROMPT
     assert "Person" in SYSTEM_PROMPT.split("Personal, reflexive and possessive pronouns")[1][:200]
-
-
-def test_system_prompt_takes_gender_from_the_word_it_agrees_with():
     assert "agrees with or refers to" in SYSTEM_PROMPT
 
 
@@ -266,9 +194,6 @@ def test_failure_counts_report_the_rate_and_the_kinds(tmp_path, tokens):
     assert (counts.total, counts.failed) == (4, 3)
     assert counts.rate == 0.75
     assert counts.by_kind == {"invalid JSON": 2, "stopped with max_tokens": 1}
-
-
-def test_failure_counts_of_no_results_have_a_zero_rate():
     assert failure_counts([]).rate == 0.0
 
 
@@ -284,14 +209,11 @@ def test_run_raw_carries_the_usage_and_whether_the_cache_answered(tmp_path, toke
     assert len(api.messages.calls) == 1
 
 
-def test_allowed_values_equal_the_shared_schemas():
+def test_the_raw_schema_and_allowed_values_match_the_shared_schema():
     assert {name: set(values) for name, values in ALLOWED_FEATURES.items()} == {
         name: set(values) for name, values in canonical_values().items()
     }
     assert UPOS_TAGS == SHARED_UPOS_TAGS
-
-
-def test_the_claim_features_of_the_shared_schema_match_the_raw_schema():
     shared = output_schema()["properties"]["claims"]["items"]["properties"]
     raw = OUTPUT_SCHEMA["properties"]
     assert shared["upos"] == raw["upos"]

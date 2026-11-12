@@ -38,12 +38,9 @@ def test_sample_takes_only_disagreements_and_is_repeatable():
     assert [i.token.token_id for i, _ in first] == [i.token.token_id for i, _ in again]
     assert len(first) == 4
     assert all(not a.parse_matches for _, a in first)
-
-
-def test_sample_keeps_every_disagreement_when_fewer_than_k():
-    results = [(item(1), ABSENT), (item(2), FULL)]
-
-    assert len(sample_disagreements(results, k=10, seed=40)) == 1
+    # With fewer disagreements than k, every one is kept.
+    few = [(item(1), ABSENT), (item(2), FULL)]
+    assert len(sample_disagreements(few, k=10, seed=40)) == 1
 
 
 def test_report_gives_the_ceiling_and_a_table_per_dimension():

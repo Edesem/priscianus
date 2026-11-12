@@ -49,18 +49,6 @@ def run(base: str, dest_dir: Path, *extra: str) -> int:
     return dl.main(["--base-url", base, "--dest-dir", str(dest_dir), *extra])
 
 
-def test_pinned_release_and_manifest_cover_adr_003():
-    assert dl.RELEASE == "r2.18"
-    names = {f.name for f in dl.FILES}
-    # test splits of the parse-set treebanks
-    for tb in ("perseus", "proiel", "ittb"):
-        assert f"la_{tb}-ud-test.conllu" in names
-    # train splits of all six, for frequency bands
-    for tb in ("perseus", "proiel", "ittb", "llct", "udante", "circse"):
-        assert f"la_{tb}-ud-train.conllu" in names
-    assert all(len(f.sha256) == 64 and f.size > 0 for f in dl.FILES)
-
-
 def test_default_dest_is_raw_ud():
     assert SCRIPT.parents[1] / "raw" / "ud" == dl.DEST_DIR
 

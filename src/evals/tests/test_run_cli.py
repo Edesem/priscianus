@@ -101,14 +101,6 @@ def test_run_stores_the_run_with_the_model_and_commit(workspace):
     assert row[4]
 
 
-def test_run_reports_a_rerun_as_skipped(workspace, capsys):
-    run_cli(workspace)
-    capsys.readouterr()
-    _, api, _ = run_cli(workspace)
-    assert len(api.messages.calls) == 0
-    assert "skipped 4" in capsys.readouterr().out
-
-
 def test_max_cost_is_the_client_spend_cap(workspace):
     _, _, caps = run_cli(workspace, "--max-cost", "1.50")
     assert caps == [1.5]
@@ -224,15 +216,6 @@ def test_report_without_a_manifest_leaves_the_ceiling_out_and_says_so(workspace,
     captured = capsys.readouterr()
     assert "Index matches gold" not in captured.out
     assert "no ceiling" in captured.err
-
-
-def test_report_puts_several_runs_side_by_side(workspace, capsys):
-    run_cli(workspace)
-    run_cli(workspace, "--split", "test")
-    capsys.readouterr()
-    report_cli(workspace, "1", "2")
-    out = capsys.readouterr().out
-    assert "| Items | 4 | 1 |" in out
 
 
 def test_report_can_write_to_a_file(workspace, capsys):

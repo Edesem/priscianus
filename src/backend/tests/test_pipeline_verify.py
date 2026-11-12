@@ -115,25 +115,21 @@ def test_an_ambiguous_claim_triggers_no_repair(tmp_path: Path) -> None:
     assert len(result.attempts) == 1
 
 
-def test_the_claims_before_repair_are_kept_next_to_the_final_ones(tmp_path: Path) -> None:
-    api = ScriptedAPI(amat(SUBJUNCTIVE), amat(INDICATIVE))
-    result = run(api, tmp_path)
-
-    before = result.pre_repair_claims
-    assert [c.claim.features["Mood"] for c in before] == ["Sub"]
-    assert [c.state for c in before] == [ClaimState.DISPUTED]
-    assert only(result).claim.features["Mood"] == "Ind"
-
-
 def test_every_attempt_keeps_its_message_response_and_verdicts(tmp_path: Path) -> None:
     api = ScriptedAPI(amat(SUBJUNCTIVE), amat(INDICATIVE))
-    first, second = run(api, tmp_path).attempts
+    result = run(api, tmp_path)
+    first, second = result.attempts
 
     assert first.message is None
     assert second.message is not None and '"amat"' in second.message
     assert first.loop.response.text != second.loop.response.text
     assert [c.classification.verdict for c in first.claims] == [Verdict.CONTRADICTED]
     assert [c.classification.verdict for c in second.claims] == [Verdict.VERIFIED]
+    # The claims before repair are kept next to the final ones.
+    before = result.pre_repair_claims
+    assert [c.claim.features["Mood"] for c in before] == ["Sub"]
+    assert [c.state for c in before] == [ClaimState.DISPUTED]
+    assert only(result).claim.features["Mood"] == "Ind"
 
 
 def test_the_repair_turn_sends_the_index_readings_after_the_models_own_answer(
