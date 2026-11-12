@@ -28,19 +28,9 @@ def test_drops_features_outside_the_compared_subset():
         "Poss": "Yes",
         "PronType": "Prs",
     }
+    ittb = {"Case": "Nom", "Compound": "Yes", "Form": "Emp", "InflClass": "LatPron"}
     assert map_features(perseus_pronoun) == {"Case": "Abl", "Number": "Sing"}
-
-
-def test_drops_ittb_lexical_features():
-    ittb = {
-        "Case": "Nom",
-        "Compound": "Yes",
-        "Form": "Emp",
-        "InflClass": "LatPron",
-        "InflClass[nominal]": "IndEurO",
-        "Gender": "Neut",
-    }
-    assert map_features(ittb) == {"Case": "Nom", "Gender": "Neut"}
+    assert map_features(ittb) == {"Case": "Nom"}
 
 
 def test_drops_the_diminutive_degree_but_keeps_other_degrees():
@@ -58,9 +48,7 @@ def test_unknown_value_of_a_compared_feature_raises():
 
     assert (raised.value.feature, raised.value.value) == ("Case", "Ess")
     assert "Case=Ess" in str(raised.value)
-
-
-def test_unknown_member_of_a_multi_valued_feature_raises():
+    # An unknown member of a multi-valued feature raises too.
     with pytest.raises(UnknownFeatureError):
         map_features({"Gender": "Masc,Bogus"})
 

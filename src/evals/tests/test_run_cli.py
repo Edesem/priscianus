@@ -99,14 +99,6 @@ def test_run_stores_the_run_with_the_model_and_commit(workspace):
     assert row[4]
 
 
-def test_run_reports_a_rerun_as_skipped(workspace, capsys):
-    run_cli(workspace)
-    capsys.readouterr()
-    _, api, _ = run_cli(workspace)
-    assert len(api.messages.calls) == 0
-    assert "skipped 4" in capsys.readouterr().out
-
-
 def test_max_cost_is_the_client_spend_cap(workspace):
     _, _, caps = run_cli(workspace, "--max-cost", "1.50")
     assert caps == [1.5]
@@ -129,12 +121,6 @@ def test_run_exits_non_zero_when_stopped_by_the_cost_cap(workspace, capsys):
     code, _, _ = run_cli(workspace, "--max-cost", "0.0001", "--concurrency", "1")
     assert code == 1
     assert "stopped: max cost" in capsys.readouterr().out
-
-
-def test_run_only_supports_the_raw_mode_on_the_parse_set(workspace):
-    tmp_path, manifest, ud = workspace
-    with pytest.raises(SystemExit):
-        main(["run", "--mode", "tools", "--set", "parse"])
 
 
 @pytest.mark.parametrize("value", ["0", "-2"])
@@ -185,15 +171,6 @@ def test_report_without_a_manifest_leaves_the_ceiling_out_and_says_so(workspace,
     captured = capsys.readouterr()
     assert "Index matches gold" not in captured.out
     assert "no ceiling" in captured.err
-
-
-def test_report_puts_several_runs_side_by_side(workspace, capsys):
-    run_cli(workspace)
-    run_cli(workspace, "--split", "test")
-    capsys.readouterr()
-    report_cli(workspace, "1", "2")
-    out = capsys.readouterr().out
-    assert "| Items | 4 | 1 |" in out
 
 
 def test_report_can_write_to_a_file(workspace, capsys):

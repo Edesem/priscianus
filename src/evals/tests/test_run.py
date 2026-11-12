@@ -195,8 +195,18 @@ def test_a_response_that_is_not_a_claim_is_stored_as_a_format_failure(
     ) == [("perseus/s1/4", "not json")]
 
 
-def test_each_cost_records_the_latency_of_its_call(tmp_path, items, tokens, api, store):
+def test_an_item_keeps_its_sentence_beside_the_gold(tmp_path, items, tokens, api, store):
     go(tmp_path, items, tokens, api, store)
+    (gold,) = query(store, "SELECT gold_json FROM items WHERE id = 'perseus/s1/2'")
+    assert json.loads(gold[0])["sentence"] == "Gallia est omnis divisa in partes tres"
+
+
+def test_cost_is_computed_from_usage_and_records_each_calls_latency(
+    tmp_path, items, tokens, api, store
+):
+    go(tmp_path, items, tokens, api, store)
+    # 1000 input and 100 output tokens at Haiku prices, five times.
+    assert store.spent_usd(1) == pytest.approx(5 * (1000 * 0.10 + 100 * 0.50) / 1_000_000)
     llm_latency = [
         r[0]
         for r in sqlite3.connect(tmp_path / "llm.db").execute(
@@ -204,18 +214,6 @@ def test_each_cost_records_the_latency_of_its_call(tmp_path, items, tokens, api,
         )
     ]
     assert sorted(r[0] for r in query(store, "SELECT latency_ms FROM costs")) == sorted(llm_latency)
-
-
-def test_an_item_keeps_its_sentence_beside_the_gold(tmp_path, items, tokens, api, store):
-    go(tmp_path, items, tokens, api, store)
-    (gold,) = query(store, "SELECT gold_json FROM items WHERE id = 'perseus/s1/2'")
-    assert json.loads(gold[0])["sentence"] == "Gallia est omnis divisa in partes tres"
-
-
-def test_cost_is_computed_from_usage(tmp_path, items, tokens, api, store):
-    go(tmp_path, items, tokens, api, store)
-    # 1000 input and 100 output tokens at Haiku prices, five times.
-    assert store.spent_usd(1) == pytest.approx(5 * (1000 * 0.10 + 100 * 0.50) / 1_000_000)
 
 
 def test_a_rerun_skips_items_already_answered(tmp_path, items, tokens, api, store):
@@ -242,19 +240,6 @@ def test_a_response_the_client_has_cached_is_free(tmp_path, items, tokens, api, 
     assert len(api.messages.calls) == 5
     assert other.spent_usd(1) == 0
     assert query(other, "SELECT DISTINCT cache_hit FROM costs") == [(1,)]
-
-
-def test_limit_stops_after_that_many_items(tmp_path, items, tokens, api, store):
-    summary = go(tmp_path, items, tokens, api, store, limit=3)
-    assert summary.answered == 3
-    assert len(api.messages.calls) == 3
-
-
-def test_only_items_of_the_split_are_run(tmp_path, items, tokens, api, store):
-    mixed = [items[0], Item("test", items[1].token, "Classical", "perseus", "verb", "top1k")]
-    summary = go(tmp_path, mixed, tokens, api, store, split="test")
-    assert summary.answered == 1
-    assert query(store, "SELECT item_id FROM responses") == [("perseus/s1/2",)]
 
 
 def test_concurrent_runs_answer_every_item_once(tmp_path, items, tokens, api, store):

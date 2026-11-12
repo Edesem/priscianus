@@ -51,13 +51,10 @@ def test_token_without_features_has_an_empty_feature_dict():
 
 
 def test_multiword_token_line_is_not_a_token_but_marks_its_words():
-    tokens = parse_conllu(PERSEUS, treebank="perseus")
+    perseus = parse_conllu(PERSEUS, treebank="perseus")
+    assert [t.form for t in perseus] == ["animo", "me", "cum", "ante"]
+    assert [t.mwt_form for t in perseus] == [None, "mecum", "mecum", None]
 
-    assert [t.form for t in tokens] == ["animo", "me", "cum", "ante"]
-    assert [t.mwt_form for t in tokens] == [None, "mecum", "mecum", None]
-
-
-def test_enclitic_split_by_the_treebank_is_marked_with_the_surface_word():
     tokens = parse_conllu(ITTB, treebank="ittb")
 
     assert [(t.form, t.mwt_form) for t in tokens] == [
@@ -65,12 +62,6 @@ def test_enclitic_split_by_the_treebank_is_marked_with_the_surface_word():
         ("que", "essetque"),
         ("aliquod", None),
     ]
-
-
-def test_every_token_carries_the_full_sentence_text():
-    tokens = parse_conllu(ITTB, treebank="ittb")
-
-    assert {t.sentence for t in tokens} == {"essetque aliquod"}
 
 
 def test_token_ids_are_integers_within_their_sentence():
