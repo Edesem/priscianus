@@ -149,13 +149,18 @@ def main(
             for info, _ in runs
             if info.mode == "verified"
         }
-        text = render_report(
-            runs,
-            morphology,
-            agreement=ceiling,
-            first_passes=first_passes,
-            per_category=options.sample,
-        )
+        try:
+            text = render_report(
+                runs,
+                morphology,
+                agreement=ceiling,
+                first_passes=first_passes,
+                tool_calls={info.run_id: store.tool_call_counts(info.run_id) for info, _ in runs},
+                per_category=options.sample,
+            )
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            return 2
         if options.out:
             options.out.parent.mkdir(parents=True, exist_ok=True)
             options.out.write_text(text, encoding="utf-8")
