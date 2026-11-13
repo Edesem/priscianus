@@ -570,6 +570,16 @@ class EvalStore:
             r[0]: FirstPass(r[1], None if r[2] is None else bool(r[2]), bool(r[3])) for r in rows
         }
 
+    def tool_call_counts(self, run_id: int) -> dict[str, int]:
+        """How many tool calls each answered item made, repair attempts included, by item ID."""
+        rows = self._db.execute(
+            "SELECT responses.item_id, COUNT(tool_calls.response_id) FROM responses"
+            " LEFT JOIN tool_calls ON tool_calls.response_id = responses.id"
+            " WHERE responses.run_id = ? GROUP BY responses.id",
+            (run_id,),
+        )
+        return dict(rows)
+
     def claims_to_verify(self, run_id: int) -> list[StoredVerdictClaim]:
         """Every claim of the run, of every attempt, with its verdict under the run's own build."""
         return [
