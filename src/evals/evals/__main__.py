@@ -17,10 +17,9 @@ from evals.gold import read_conllu
 from evals.index_agreement import Agreement, evaluate, sample_disagreements
 from evals.index_agreement import render_report as render_agreement
 from evals.parse_set import DEFAULT_SEED, build_set, load_parse_set
-from evals.raw_prompt import PROMPT_ID
 from evals.report import render_report
 from evals.reverify import reverify_run
-from evals.run import MODE, SET_NAME, item_id, run_parse
+from evals.run import PROMPT_IDS, SET_NAME, item_id, run_parse
 from evals.store import EvalStore, RunKey
 
 _ROOT = Path(__file__).resolve().parents[3]
@@ -80,7 +79,7 @@ def main(
     agreement.add_argument("--sample", type=int, default=100, help="Disagreements to sample")
     agreement.add_argument("--sample-out", type=Path, help="Write the sampled disagreements here")
     run = commands.add_parser("run", help="Run an eval set against a model and store the results")
-    run.add_argument("--mode", choices=["raw"], required=True)
+    run.add_argument("--mode", choices=["raw", "tools"], required=True)
     run.add_argument("--set", choices=["parse"], required=True)
     run.add_argument("--split", choices=["dev", "test"], default="dev")
     run.add_argument("--model", default=HAIKU)
@@ -163,13 +162,16 @@ def main(
         ]
         store = EvalStore(options.store)
         version = options.manifest.stem.rsplit("-", 1)[-1]
-        key = RunKey(SET_NAME, version, options.split, MODE, options.model, PROMPT_ID)
+        key = RunKey(
+            SET_NAME, version, options.split, options.mode, options.model, PROMPT_IDS[options.mode]
+        )
+        morphology = index or SqliteIndex()
         cap = None if options.max_cost is None else options.max_cost - store.spent_usd_for(key)
         summary = run_parse(
             items,
             tokens,
             make_client(spend_cap_usd=cap, db_path=options.llm_db),
-            index or SqliteIndex(),
+            morphology,
             store,
             model=options.model,
             manifest_version=version,
@@ -177,6 +179,8 @@ def main(
             git_commit=_git_commit(),
             limit=options.limit,
             concurrency=options.concurrency,
+            mode=options.mode,
+            index_build_hash=_build_hash(morphology) if options.mode == "tools" else None,
         )
         print(
             f"Run {summary.run_id} {summary.status}: answered {summary.answered}, "

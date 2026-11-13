@@ -4,6 +4,7 @@ import threading
 from collections.abc import Sequence
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from typing import Any
 
 from priscianus.llm.client import LLMClient, SpendCapExceeded
 from priscianus.llm.config import cost_usd
@@ -16,9 +17,13 @@ from evals.parse_set import Item
 from evals.raw_prompt import PROMPT_ID, ParseFailure, RawResult, occurrence_of, run_raw
 from evals.score import score_claim
 from evals.store import EvalStore, RunKey
+from evals.tools_prompt import PROMPT_ID as TOOLS_PROMPT_ID
+from evals.tools_prompt import ToolsResult, run_tools
 
 MODE = "raw"
 SET_NAME = "parse"
+# The prompt each mode stores with its runs.
+PROMPT_IDS = {"raw": PROMPT_ID, "tools": TOOLS_PROMPT_ID}
 
 
 @dataclass(frozen=True)
@@ -48,8 +53,13 @@ def run_parse(
     git_commit: str,
     limit: int | None = None,
     concurrency: int = 1,
+    mode: str = MODE,
+    index_build_hash: str | None = None,
 ) -> RunSummary:
     """Ask `model` about each item of `split` that the run has not answered yet.
+
+    `mode` is "raw" (no tools) or "tools" (the model can call the index; it needs
+    `index_build_hash`, because tool results depend on the index).
 
     `tokens` are the words of the items' sentences, to find which occurrence of a repeated form
     is the target. The first `limit` items of the split are in scope. Only the model calls run
@@ -60,7 +70,9 @@ def run_parse(
     """
     scope = [i for i in items if i.split == split][:limit]
     run_id = store.start_run(
-        RunKey(SET_NAME, manifest_version, split, MODE, model, PROMPT_ID), git_commit=git_commit
+        RunKey(SET_NAME, manifest_version, split, mode, model, PROMPT_IDS[mode]),
+        git_commit=git_commit,
+        index_build_hash=index_build_hash,
     )
     answered = store.answered_items(run_id)
     todo = [i for i in scope if item_id(i.token) not in answered]
@@ -69,17 +81,22 @@ def run_parse(
 
     stop = threading.Event()
 
-    def ask(item: Item) -> RawResult:
+    def ask(item: Item) -> RawResult | ToolsResult:
         if stop.is_set():
             raise CancelledError
         try:
-            return run_raw(client, model, item.token, occurrence_of(item.token, tokens))
+            occurrence = occurrence_of(item.token, tokens)
+            if mode == "tools":
+                return run_tools(client, model, item.token, occurrence, index)
+            return run_raw(client, model, item.token, occurrence)
         except BaseException:
             stop.set()
             raise
 
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        futures: dict[Future[RawResult], Item] = {pool.submit(ask, i): i for i in todo}
+        futures: dict[Future[RawResult | ToolsResult], Item] = {
+            pool.submit(ask, i): i for i in todo
+        }
         try:
             for future in as_completed(futures):
                 try:
@@ -89,7 +106,7 @@ def run_parse(
                 except SpendCapExceeded:
                     status = "stopped: max cost"
                     continue
-                _record(store, run_id, futures[future], result, index)
+                _record(store, run_id, futures[future], result, index, index_build_hash)
                 done += 1
                 failures += isinstance(result.outcome, ParseFailure)
         except BaseException:
@@ -101,7 +118,12 @@ def run_parse(
 
 
 def _record(
-    store: EvalStore, run_id: int, item: Item, result: RawResult, index: MorphologyIndex
+    store: EvalStore,
+    run_id: int,
+    item: Item,
+    result: RawResult | ToolsResult,
+    index: MorphologyIndex,
+    index_build_hash: str | None,
 ) -> None:
     token = item.token
     identifier = item_id(token)
@@ -122,26 +144,27 @@ def _record(
             "sentence": token.sentence,
         },
     )
-    usage = result.usage
-    cost = {
-        "model": result.model,
-        "input_tokens": usage.input_tokens,
-        "output_tokens": usage.output_tokens,
-        "cache_read_tokens": usage.cache_read_tokens,
-        "cache_write_tokens": usage.cache_write_tokens,
-        "usd": 0.0
-        if result.cache_hit
-        else cost_usd(
-            result.model,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
-            cache_read_tokens=usage.cache_read_tokens,
-            cache_write_tokens=usage.cache_write_tokens,
-        ),
-        "cache_hit": result.cache_hit,
-        "latency_ms": result.latency_ms,
-    }
     outcome = result.outcome
+    extras: dict[str, Any] = {}
+    if isinstance(result, ToolsResult):
+        cost: dict[str, Any] | list[dict[str, Any]] = _call_costs(result)
+        extras = {
+            "index_build_hash": index_build_hash,
+            "tool_limit_hit": result.loop.tool_limit_hit,
+            "tool_calls": [
+                {
+                    "attempt": 0,
+                    "round": t.round,
+                    "name": t.name,
+                    "input": t.input,
+                    "result": t.result,
+                    "is_error": t.is_error,
+                }
+                for t in result.loop.tool_calls
+            ],
+        }
+    else:
+        cost = _raw_cost(result)
     if isinstance(outcome, ParseFailure):
         store.record_response(
             run_id,
@@ -152,6 +175,7 @@ def _record(
             verdict=None,
             score=None,
             cost=cost,
+            **extras,
         )
         return
     verdict = classify(outcome, index)
@@ -175,7 +199,51 @@ def _record(
             "features": score.features,
         },
         cost=cost,
+        **extras,
     )
+
+
+def _raw_cost(result: RawResult) -> dict[str, Any]:
+    usage = result.usage
+    return {
+        "model": result.model,
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "cache_read_tokens": usage.cache_read_tokens,
+        "cache_write_tokens": usage.cache_write_tokens,
+        "usd": 0.0
+        if result.cache_hit
+        else cost_usd(
+            result.model,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            cache_read_tokens=usage.cache_read_tokens,
+            cache_write_tokens=usage.cache_write_tokens,
+        ),
+        "cache_hit": result.cache_hit,
+        "latency_ms": result.latency_ms,
+    }
+
+
+def _call_costs(result: ToolsResult) -> list[dict[str, Any]]:
+    """One cost row per API call. A cached call costs nothing now, but keeps its list price."""
+    return [
+        {
+            "model": result.model,
+            "input_tokens": call.usage.input_tokens,
+            "output_tokens": call.usage.output_tokens,
+            "cache_read_tokens": call.usage.cache_read_tokens,
+            "cache_write_tokens": call.usage.cache_write_tokens,
+            "usd": 0.0 if call.cache_hit else call.usd,
+            "cache_hit": call.cache_hit,
+            "latency_ms": call.latency_ms,
+            "attempt": 0,
+            "ordinal": ordinal,
+            "list_usd": call.usd,
+            "list_latency_ms": call.latency_ms,
+        }
+        for ordinal, call in enumerate(result.loop.calls)
+    ]
 
 
 def _deponent(token: GoldToken, index: MorphologyIndex) -> bool:
