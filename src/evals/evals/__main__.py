@@ -79,7 +79,7 @@ def main(
     agreement.add_argument("--sample", type=int, default=100, help="Disagreements to sample")
     agreement.add_argument("--sample-out", type=Path, help="Write the sampled disagreements here")
     run = commands.add_parser("run", help="Run an eval set against a model and store the results")
-    run.add_argument("--mode", choices=["raw", "tools"], required=True)
+    run.add_argument("--mode", choices=["raw", "tools", "verified"], required=True)
     run.add_argument("--set", choices=["parse"], required=True)
     run.add_argument("--split", choices=["dev", "test"], default="dev")
     run.add_argument("--model", default=HAIKU)
@@ -144,7 +144,18 @@ def main(
             ceiling = {item_id(i.token): a for i, a in evaluate(items, morphology.analyse)}
         except OSError as error:
             print(f"no ceiling: could not read the parse set ({error})", file=sys.stderr)
-        text = render_report(runs, morphology, agreement=ceiling, per_category=options.sample)
+        first_passes = {
+            info.run_id: store.first_passes(info.run_id, verdicts_under=under)
+            for info, _ in runs
+            if info.mode == "verified"
+        }
+        text = render_report(
+            runs,
+            morphology,
+            agreement=ceiling,
+            first_passes=first_passes,
+            per_category=options.sample,
+        )
         if options.out:
             options.out.parent.mkdir(parents=True, exist_ok=True)
             options.out.write_text(text, encoding="utf-8")
@@ -180,7 +191,7 @@ def main(
             limit=options.limit,
             concurrency=options.concurrency,
             mode=options.mode,
-            index_build_hash=_build_hash(morphology) if options.mode == "tools" else None,
+            index_build_hash=_build_hash(morphology) if options.mode != "raw" else None,
         )
         print(
             f"Run {summary.run_id} {summary.status}: answered {summary.answered}, "

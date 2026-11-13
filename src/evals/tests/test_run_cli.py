@@ -6,8 +6,10 @@ import pytest
 
 from evals.__main__ import main
 from evals.tools_prompt import PROMPT_ID as TOOLS_PROMPT_ID
+from evals.tools_prompt import VERIFIED_PROMPT_ID
 from tests.test_run import CONLLU, FakeIndex, FakeMessages, client_for
 from tests.test_run_tools import ToolCallingMessages
+from tests.test_run_verified import RepairIndex, VerifiedMessages
 
 
 def sha(text):
@@ -163,9 +165,42 @@ def test_cli_runs_tools_mode_with_the_same_options_as_raw(workspace, capsys):
     ).fetchall() == [("tools", TOOLS_PROMPT_ID)]
 
 
-def test_run_rejects_a_mode_that_does_not_exist_yet(workspace):
-    with pytest.raises(SystemExit):
-        main(["run", "--mode", "verified", "--set", "parse"])
+def test_cli_runs_verified_mode_and_the_report_shows_repair(workspace, capsys):
+    tmp_path, manifest, ud = workspace
+    api = type("Api", (), {"messages": VerifiedMessages()})()
+    paths = [
+        "--manifest",
+        str(manifest),
+        "--ud-dir",
+        str(ud),
+        "--store",
+        str(tmp_path / "evals.db"),
+    ]
+    code = main(
+        [
+            "run",
+            "--mode",
+            "verified",
+            "--set",
+            "parse",
+            *paths,
+            "--llm-db",
+            str(tmp_path / "llm.db"),
+        ],
+        make_client=lambda *, spend_cap_usd, db_path: client_for(
+            tmp_path, api, spend_cap_usd=spend_cap_usd
+        ),
+        index=RepairIndex(),
+    )
+    assert code == 0
+    assert sqlite3.connect(tmp_path / "evals.db").execute(
+        "SELECT mode, prompt_id FROM runs"
+    ).fetchall() == [("verified", VERIFIED_PROMPT_ID)]
+    capsys.readouterr()
+    assert main(["report", "1", *paths], index=RepairIndex()) == 0
+    out = capsys.readouterr().out
+    assert "### Repair" in out
+    assert "### Residual error" in out
 
 
 @pytest.mark.parametrize("value", ["0", "-2"])
