@@ -137,6 +137,14 @@ class Row(NamedTuple):
     latency_ms: int
 
 
+class FirstPass(NamedTuple):
+    """An item's first-pass claim, before any repair, and whether the item entered repair."""
+
+    verdict: str | None
+    exact: bool | None
+    entered_repair: bool
+
+
 class StoredClaim(NamedTuple):
     """One claim of a response: the first pass (`attempt` 0) or a repair attempt's."""
 
@@ -540,6 +548,27 @@ class EvalStore:
             )
             for r in rows
         ]
+
+    def first_passes(
+        self, run_id: int, *, verdicts_under: str | None = None
+    ) -> dict[str, FirstPass]:
+        """The first-pass claim of every item that gave one, by item ID, for the before and after
+        of repair. Verdicts are chosen as in `run_rows`."""
+        rows = self._db.execute(
+            "SELECT responses.item_id, verdicts.verdict, scores.exact_match,"
+            " EXISTS (SELECT 1 FROM repair_attempts WHERE response_id = responses.id)"
+            " FROM responses JOIN runs ON runs.id = responses.run_id"
+            " JOIN claims ON claims.response_id = responses.id AND claims.attempt = 0"
+            " LEFT JOIN verdicts ON verdicts.claim_id = claims.id"
+            " AND verdicts.index_build_hash IS COALESCE(?, runs.index_build_hash)"
+            " LEFT JOIN scores ON scores.response_id = responses.id"
+            " AND (scores.claim_id = claims.id OR scores.claim_id IS NULL)"
+            " WHERE responses.run_id = ?",
+            (verdicts_under, run_id),
+        )
+        return {
+            r[0]: FirstPass(r[1], None if r[2] is None else bool(r[2]), bool(r[3])) for r in rows
+        }
 
     def claims_to_verify(self, run_id: int) -> list[StoredVerdictClaim]:
         """Every claim of the run, of every attempt, with its verdict under the run's own build."""

@@ -8,6 +8,7 @@ from priscianus.llm.client import LLMClient
 from priscianus.morphology.normaliser import key_loose
 from priscianus.pipeline.loop import LoopResult, run_with_tools
 from priscianus.pipeline.tools import TOOL_DEFINITIONS, execute_tool_use
+from priscianus.pipeline.verify import VerifiedResult, verify_and_repair
 from priscianus.verifier.claims import Claim, SchemaError, output_schema
 from priscianus.verifier.index import MorphologyIndex
 
@@ -17,6 +18,9 @@ from evals.raw_prompt import ALLOWED_FEATURES, UPOS_TAGS, ParseFailure, build_me
 # Stored with every response. Change it whenever SYSTEM_PROMPT, the output schema, the tool
 # definitions, the loop limits or the user message change (ADR-004, Decision 7).
 PROMPT_ID = "tools-parse-v1"
+# `verified` pins everything above plus the repair template, the repair limits and the trigger
+# rule (ADR-004, Decision 7). Its first pass is the `tools` request, byte for byte.
+VERIFIED_PROMPT_ID = "verified-parse-v1"
 
 
 def _feature_lines() -> str:
@@ -129,3 +133,80 @@ def _one_claim(loop: LoopResult, form: str) -> Claim | ParseFailure:
     if key_loose(claim.form) != key_loose(form):
         return ParseFailure(f"the claim is about {claim.form!r}, not {form!r}")
     return Claim(form, claim.lemma, claim.upos, claim.features)
+
+
+@dataclass(frozen=True)
+class VerifiedParse:
+    """One item's answer after verification and repair.
+
+    `claims` has the parse task's claim for each attempt that gave a valid one, as
+    `(attempt, claim)` in order; the last is the final claim. `failures` maps an attempt to why
+    its answer broke the one-claim rule. If the first pass broke it, `outcome` is a
+    `ParseFailure` and there are no claims.
+    """
+
+    prompt_id: str
+    model: str
+    raw_text: str
+    outcome: Claim | ParseFailure
+    result: VerifiedResult
+    claims: tuple[tuple[int, Claim], ...]
+    failures: dict[int, str]
+
+
+def run_verified(
+    client: LLMClient,
+    model: str,
+    target: GoldToken,
+    occurrence: int,
+    index: MorphologyIndex,
+    *,
+    max_tokens: int = 4096,
+    sample: int = 0,
+) -> VerifiedParse:
+    """Ask `model` to parse `target` with the index as tools, check the claim against the index
+    and send it back with the index's readings if it needs repair (ADR-004, Decision 4).
+
+    A repair answer that is not one claim about the target is ignored: the previous claim stands.
+    """
+    result = verify_and_repair(
+        client,
+        model,
+        build_messages(target, occurrence),
+        TOOL_DEFINITIONS,
+        lambda block: execute_tool_use(block, index),
+        index,
+        system=SYSTEM_PROMPT,
+        output_schema=_OUTPUT_SCHEMA,
+        max_tokens=max_tokens,
+        sample=sample,
+    )
+    claims: list[tuple[int, Claim]] = []
+    failures: dict[int, str] = {}
+    for attempt in result.attempts:
+        one = _one_claim(attempt.loop, target.form)
+        if isinstance(one, ParseFailure):
+            failures[attempt.attempt] = one.reason
+        else:
+            claims.append((attempt.attempt, one))
+    first = result.attempts[0]
+    if 0 in failures:
+        return VerifiedParse(
+            VERIFIED_PROMPT_ID,
+            model,
+            first.loop.response.text,
+            ParseFailure(failures[0]),
+            result,
+            (),
+            failures,
+        )
+    last = result.attempts[claims[-1][0]]
+    return VerifiedParse(
+        VERIFIED_PROMPT_ID,
+        model,
+        last.loop.response.text,
+        claims[-1][1],
+        result,
+        tuple(claims),
+        failures,
+    )

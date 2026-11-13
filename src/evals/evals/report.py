@@ -13,7 +13,7 @@ from priscianus.verifier.classify import Verdict, classify
 from priscianus.verifier.index import MorphologyIndex
 
 from evals.index_agreement import Agreement
-from evals.store import Row, RunInfo
+from evals.store import FirstPass, Row, RunInfo
 
 
 @dataclass(frozen=True)
@@ -113,6 +113,87 @@ def breakdown(rows: Sequence[Row], dimension: str) -> dict[str, Headline]:
     for row in rows:
         groups.setdefault(getattr(row, dimension), []).append(row)
     return {name: headline(group) for name, group in sorted(groups.items())}
+
+
+@dataclass(frozen=True)
+class RepairSummary:
+    """Repair over the items of a `verified` run, comparing the first-pass claim with the final one
+    (ADR-004, Decision 6). Items without a claim are in `items` but cannot enter repair.
+
+    `success` is an item in repair that was wrong first and exact at the end; `harm` is the
+    reverse. Net effect is (success - harm) / items, the gain in exact match over the first pass.
+    """
+
+    items: int
+    entered: int
+    success: int
+    harm: int
+
+    @property
+    def net_effect(self) -> float | None:
+        return _rate(self.success - self.harm, self.items)
+
+
+def repair_summary(rows: Sequence[Row], first_passes: Mapping[str, FirstPass]) -> RepairSummary:
+    entered = success = harm = 0
+    for row in rows:
+        before = first_passes.get(row.item_id)
+        if before is None or not before.entered_repair:
+            continue
+        entered += 1
+        after = bool(row.score and row.score["exact_match"])
+        success += after and not before.exact
+        harm += before.exact is True and not after
+    return RepairSummary(len(rows), entered, success, harm)
+
+
+@dataclass(frozen=True)
+class ResidualError:
+    """What reaches the learner, by the final state of each answered item (ADR-004, Decision 6).
+
+    A verified or ambiguous claim that is wrong is a false assurance; an unverifiable one that is
+    wrong is an unchecked error; a disputed one that is right is a false alarm and one that is
+    wrong is a caught error. Items without a claim are left out.
+    """
+
+    items: int
+    false_assurance: int
+    unchecked_error: int
+    false_alarm: int
+    caught_error: int
+    correct: int
+    correct_unchecked: int
+
+    @property
+    def residual_rate(self) -> float | None:
+        return _rate(self.false_assurance + self.unchecked_error, self.items)
+
+    @property
+    def false_alarm_rate(self) -> float | None:
+        return _rate(self.false_alarm, self.items)
+
+
+def residual_error(rows: Sequence[Row]) -> ResidualError:
+    counts: Counter[str] = Counter()
+    for row in rows:
+        if row.score is None or row.verdict is None:
+            continue
+        exact = row.score["exact_match"]
+        if row.verdict == "contradicted":
+            counts["false_alarm" if exact else "caught_error"] += 1
+        elif row.verdict == "unknown":
+            counts["correct_unchecked" if exact else "unchecked_error"] += 1
+        else:
+            counts["correct" if exact else "false_assurance"] += 1
+    return ResidualError(
+        items=sum(counts.values()),
+        false_assurance=counts["false_assurance"],
+        unchecked_error=counts["unchecked_error"],
+        false_alarm=counts["false_alarm"],
+        caught_error=counts["caught_error"],
+        correct=counts["correct"],
+        correct_unchecked=counts["correct_unchecked"],
+    )
 
 
 @dataclass(frozen=True)
@@ -311,11 +392,55 @@ def _example(row: Row, index: MorphologyIndex) -> list[str]:
     return lines
 
 
+def _verified_section(rows: Sequence[Row], first_passes: Mapping[str, FirstPass]) -> list[str]:
+    repair = repair_summary(rows, first_passes)
+    cells = residual_error(rows)
+    out = ["### Repair (first pass against final claim)", ""]
+    out += _table(
+        ["Items", "Entered repair", "Repair success", "Repair harm", "Net effect"],
+        [
+            [
+                str(repair.items),
+                _pct(repair.entered, repair.items),
+                f"{repair.success} ({_pct(repair.success, repair.entered)} of repaired)",
+                f"{repair.harm} ({_pct(repair.harm, repair.entered)} of repaired)",
+                f"{repair.net_effect * 100:+.1f} points" if repair.net_effect is not None else "–",
+            ]
+        ],
+    )
+    out += ["### Residual error (final claims)", ""]
+    out += _table(
+        ["Final state", "Exact", "Not exact"],
+        [
+            [
+                "verified or ambiguous",
+                f"{cells.correct} correct",
+                f"{cells.false_assurance} false assurance",
+            ],
+            [
+                "unverifiable",
+                f"{cells.correct_unchecked} correct, unchecked",
+                f"{cells.unchecked_error} unchecked error",
+            ],
+            ["disputed", f"{cells.false_alarm} false alarm", f"{cells.caught_error} caught error"],
+        ],
+    )
+    out += [
+        f"Residual error {_pct(cells.false_assurance + cells.unchecked_error, cells.items)}, "
+        f"false-alarm rate {_pct(cells.false_alarm, cells.items)}. Read them together: flagging "
+        "everything would drive the first to zero. An item with no claim is left out of the "
+        "table, and counts as a miss in exact match.",
+        "",
+    ]
+    return out
+
+
 def render_report(
     runs: Sequence[tuple[RunInfo, Sequence[Row]]],
     index: MorphologyIndex,
     *,
     agreement: Mapping[str, Agreement] | None = None,
+    first_passes: Mapping[int, Mapping[str, FirstPass]] | None = None,
     per_category: int = 5,
     seed: int = 0,
 ) -> str:
@@ -369,6 +494,8 @@ def render_report(
                 ],
                 _group_rows(breakdown(rows, dimension)),
             )
+        if info.mode == "verified" and first_passes is not None:
+            out += _verified_section(rows, first_passes[info.run_id])
         result = ambiguity(rows, index)
         out += ["### Ambiguity handling", ""]
         out += _table(
