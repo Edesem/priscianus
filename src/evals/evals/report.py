@@ -147,6 +147,18 @@ def repair_summary(rows: Sequence[Row], first_passes: Mapping[str, FirstPass]) -
     return RepairSummary(len(rows), entered, success, harm)
 
 
+def repair_harm_items(rows: Sequence[Row], first_passes: Mapping[str, FirstPass]) -> list[Row]:
+    """The items that were exact on the first pass, entered repair, and are not exact at the end."""
+    return [
+        row
+        for row in rows
+        if (before := first_passes.get(row.item_id))
+        and before.entered_repair
+        and before.exact is True
+        and not (row.score and row.score["exact_match"])
+    ]
+
+
 @dataclass(frozen=True)
 class ResidualError:
     """What reaches the learner, by the final state of each answered item (ADR-004, Decision 6).
@@ -435,12 +447,64 @@ def _verified_section(rows: Sequence[Row], first_passes: Mapping[str, FirstPass]
     return out
 
 
+def _mode_rows(
+    runs: Sequence[tuple[RunInfo, Sequence[Row]]],
+    first_passes: Mapping[int, Mapping[str, FirstPass]],
+    tool_calls: Mapping[int, Mapping[str, int]],
+) -> list[list[str]]:
+    table = []
+    for info, rows in runs:
+        h = headline(rows)
+        residual = residual_error(rows)
+        if info.mode == "verified" and info.run_id in first_passes:
+            repair = repair_summary(rows, first_passes[info.run_id])
+            repaired = f"{repair.success} / {repair.harm}"
+        else:
+            repaired = "–"
+        calls = sum(tool_calls.get(info.run_id, {}).values())
+        table.append(
+            [
+                info.mode,
+                info.model,
+                _pct(h.exact, h.n),
+                _pct(h.lemma, h.n),
+                _pct(h.contradicted, h.claims),
+                _pct(h.unknown, h.claims),
+                _pct(residual.false_assurance + residual.unchecked_error, residual.items),
+                repaired,
+                f"{calls / h.n:.1f}" if h.n else "–",
+                f"${h.usd / h.n:.4f}" if h.n else "–",
+                "–" if h.latency_p50_ms is None else f"{h.latency_p50_ms} / {h.latency_p95_ms} ms",
+            ]
+        )
+    return table
+
+
+def _repair_harm_section(
+    runs: Sequence[tuple[RunInfo, Sequence[Row]]],
+    first_passes: Mapping[int, Mapping[str, FirstPass]],
+    index: MorphologyIndex,
+) -> list[str]:
+    """Item IDs and index readings only, so that no treebank text is printed (ADR-003)."""
+    out = ["## Repair harm", ""]
+    for info, rows in runs:
+        if info.mode != "verified" or info.run_id not in first_passes:
+            continue
+        harmed = repair_harm_items(rows, first_passes[info.run_id])
+        out.append(f"Run {info.run_id}: {len(harmed)} item(s) right at first, wrong after repair.")
+        for row in harmed:
+            out.append(f"- **{row.item_id}** — index: {_readings(index.analyse(row.gold['form']))}")
+        out.append("")
+    return out
+
+
 def render_report(
     runs: Sequence[tuple[RunInfo, Sequence[Row]]],
     index: MorphologyIndex,
     *,
     agreement: Mapping[str, Agreement] | None = None,
     first_passes: Mapping[int, Mapping[str, FirstPass]] | None = None,
+    tool_calls: Mapping[int, Mapping[str, int]] | None = None,
     per_category: int = 5,
     seed: int = 0,
 ) -> str:
@@ -449,7 +513,16 @@ def render_report(
     `agreement` is the index-vs-gold result for the parse set (#40), shown as the ceiling on
     exact match. The failure examples need the sentence, which the store keeps with the gold,
     so the report is for the author; a committed one cites item IDs only (ADR-003).
+
+    Raises `ValueError` if the runs are not all on the same set, manifest version and split, since
+    their numbers would not be over the same items.
     """
+    sets = {(info.set_name, info.manifest_version, info.split) for info, _ in runs}
+    if len(sets) > 1:
+        raise ValueError(
+            "Cannot pool runs from different sets, manifest versions or splits: "
+            + ", ".join(f"{s}-{v} {split}" for s, v, split in sorted(sets))
+        )
     out = ["# Eval report", ""]
     out.append(
         "The numbers are averages over a stratified sample that overweights rare lemmas and "
@@ -468,6 +541,23 @@ def render_report(
         )
     out += ["", "## Headline", ""]
     out += _table(["Metric", *names], _headline_rows(list(zip(heads, ceilings, strict=True))))
+    out += ["## Modes compared", ""]
+    out += _table(
+        [
+            "Mode",
+            "Model",
+            "Exact",
+            "Lemma",
+            "Halluc.",
+            "Unverif.",
+            "Residual error",
+            "Repair success / harm",
+            "Tool calls / item",
+            "$ / item",
+            "Latency p50 / p95",
+        ],
+        _mode_rows(runs, first_passes or {}, tool_calls or {}),
+    )
     feature_names = sorted({name for h in heads for name in h.features})
     out += ["## Accuracy by feature", ""]
     out += _table(
@@ -478,7 +568,7 @@ def render_report(
         ],
     )
     for info, rows in runs:
-        out += [f"## Run {info.run_id}: {info.model} on {info.split}", ""]
+        out += [f"## Run {info.run_id}: {info.mode} mode, {info.model} on {info.split}", ""]
         for title, dimension in _DIMENSIONS:
             out += [f"### By {title.lower()}", ""]
             out += _table(
@@ -518,4 +608,6 @@ def render_report(
             for row in sample:
                 out += _example(row, index)
             out.append("")
+    if first_passes and any(info.mode == "verified" for info, _ in runs):
+        out += _repair_harm_section(runs, first_passes, index)
     return "\n".join(out).rstrip() + "\n"
