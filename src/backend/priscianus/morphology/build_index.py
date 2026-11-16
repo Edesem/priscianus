@@ -67,7 +67,11 @@ _SOURCE = "wiktionary"
 # Forms from inflection tables carry full feature sets. Headword-line forms (no source)
 # carry only a tag or two, such as the genitive or the lemma's gender, so they are not analyses.
 _TABLE_SOURCES = frozenset({"declension", "conjugation", "inflection"})
-_SCHEMA_VERSION = "3"
+# Bumped when the rows change, not only the columns: the hash is of the schema version and dump.
+_SCHEMA_VERSION = "4"
+
+# Wiktionary writes "-" in a table cell that has no form (the vocative of "is").
+_EMPTY_CELL = "-"
 
 _LICENCE = (
     "Derived from English Wiktionary via Wiktextract (kaikki.org). "
@@ -160,7 +164,7 @@ def _dump_date(dump: Path) -> str:
 def _readings(entry: dict[str, Any], report: BuildReport) -> list[tuple[str, dict[str, str]]]:
     rows: list[tuple[str, dict[str, str]]] = []
     for form in entry.get("forms", []):
-        if form.get("source") not in _TABLE_SOURCES:
+        if form.get("source") not in _TABLE_SOURCES or form["form"] == _EMPTY_CELL:
             continue
         try:
             readings = map_tags(form.get("tags", []))

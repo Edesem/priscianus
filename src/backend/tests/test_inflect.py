@@ -91,6 +91,21 @@ def test_vocative_of_a_verb_raises(db: Path) -> None:
         inflect("amo", {"Case": "Voc"}, db=db)
 
 
+def test_a_dash_cell_is_never_returned_as_a_form(tmp_path: Path) -> None:
+    pronoun = {
+        "word": "is",
+        "pos": "pron",
+        "forms": [_form("is", "nominative", "singular"), _form("-", "vocative", "singular")],
+    }
+    dump = tmp_path / "dump.jsonl"
+    dump.write_text(json.dumps(pronoun, ensure_ascii=False) + "\n")
+    path = tmp_path / "morphology.db"
+    build_index(dump, path)
+
+    with pytest.raises(NoSuchFormError):
+        inflect("is", {"Case": "Voc"}, db=path)
+
+
 def test_unknown_lemma_raises(db: Path) -> None:
     with pytest.raises(NoSuchFormError):
         inflect("xyzzy", {"Case": "Nom"}, db=db)

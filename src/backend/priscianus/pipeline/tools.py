@@ -21,8 +21,6 @@ MAX_RESULTS = 50
 _GERUNDIVE = {"VerbForm": "Part", "Tense": "Fut", "Voice": "Pass"}
 # What the index cannot check (`relax`), so that `inflect` drops it when nothing fits.
 _RELAXABLE = ("Gender", "Person", "Voice")
-# Wiktionary's placeholder for an empty table cell.
-_PLACEHOLDER = "-"
 
 TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
@@ -174,7 +172,7 @@ def _forms(
 def _indexed_forms(
     index: MorphologyIndex, lemma: str, features: dict[str, str], pos: str | None
 ) -> list[str]:
-    forms = [form for form in index.inflect(lemma, features, pos) if form != _PLACEHOLDER]
+    forms = index.inflect(lemma, features, pos)
     if not forms:
         raise NoSuchFormError(f"No form of {lemma!r} with features {features}")
     return forms
