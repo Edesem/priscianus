@@ -205,10 +205,15 @@ Stretch: React Native client, spaced repetition on missed forms, teacher workshe
 | Claude Opus 5.5 (`claude-opus-5-5`) | $4 / $20 | Eval comparison only ("does a bigger model help?"); not needed in the product. |
 
 ### Estimated cost per request
-Assumes ~3k tokens of cached system prompt and tools, ~2k fresh input, ~1.5k output (including thinking), two tool round trips. These are estimates; measure real numbers from the call log in milestone 3.
+Assumes ~3k tokens of cached system prompt and tools, ~2k fresh input, ~1.5k output (including thinking), two tool round trips. These are estimates.
 - Haiku 5.5: about **$0.001** per request.
 - Sonnet 5.5: about **$0.02** per request.
 - An 80/20 Haiku/Sonnet mix averages about **$0.005** per request, so a heavy user doing 300 requests a month costs about **$1.50**.
+
+**Measured in M3** ([verified-eval.md](verified-eval.md); single-token parses on the 1,000-item test split, verified mode, about 1 tool call per request, no prompt-cache discount assumed):
+- Haiku 5.5: **$0.00034** per request, p50 / p95 latency 3.8 s / 7.0 s. About 3 times below the estimate.
+- Sonnet 5.5: **$0.0048** per request, 3.5 s / 6.3 s. About 4 times below the estimate.
+- An 80/20 mix would be about **$0.0012** per request. These are word-level parses with a short answer, not sentence explanations, so the estimate for sentence explanations is not tested by them and stays as written above.
 
 ### Development and hosting
 - Full eval (1,000 parse items × 3 modes × 2 models plus the smaller sets): roughly **$50–100 per full run** at standard prices, about half that with the Batch API. Cache responses so re-running reports is free; the CI smoke eval costs cents.
