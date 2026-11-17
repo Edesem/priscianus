@@ -96,7 +96,7 @@ def test_meta_records_version_dump_date_build_hash_and_licence(tmp_path: Path) -
     build_index(dump, db)
 
     meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
-    assert meta["schema_version"] == "4"
+    assert meta["schema_version"] == "5"
     assert meta["dump_date"] == "Wed, 21 Oct 2026 13:51:28 GMT"
     assert len(meta["build_hash"]) == 64
     assert "CC BY-SA 4.0" in meta["licence"]
@@ -477,3 +477,74 @@ def test_a_lemma_whose_only_forms_are_dashes_is_left_out(tmp_path: Path) -> None
     lemmas = [r[0] for r in sqlite3.connect(db).execute("SELECT lemma FROM lemmas")]
     assert lemmas == ["rosa"]
     assert report.skipped == {"no inflected forms": 1}
+
+
+def _classed(
+    word: str,
+    pos: str,
+    headword: str,
+    *,
+    conj: str | None = None,
+    ndecl: str | None = None,
+) -> dict[str, object]:
+    """A dump entry with a headword line and, optionally, a la-conj or la-ndecl template."""
+    entry: dict[str, object] = {
+        "word": word,
+        "pos": pos,
+        "head_templates": [{"name": f"la-{pos}", "expansion": headword}],
+        "forms": [_form(word, "nominative", "singular")],
+    }
+    if conj:
+        entry["inflection_templates"] = [{"name": "la-conj", "args": {"1": conj, "2": word}}]
+    if ndecl:
+        entry["inflection_templates"] = [{"name": "la-ndecl", "args": {"1": ndecl}}]
+    return entry
+
+
+def _classes(tmp_path: Path, entries: list[dict[str, object]]) -> dict[str, str | None]:
+    build_index(_write_dump(tmp_path / "dump.jsonl", entries), tmp_path / "morphology.db")
+    con = sqlite3.connect(tmp_path / "morphology.db")
+    return dict(con.execute("SELECT lemma_display, infl_class FROM lemmas"))
+
+
+def test_a_first_conjugation_verb_gets_class_1(tmp_path: Path) -> None:
+    amo = _classed("amō", "verb", "amō (present infinitive amāre); first conjugation", conj="1")
+    assert _classes(tmp_path, [amo]) == {"amō": "1"}
+
+
+def test_a_third_io_verb_gets_3io_even_though_la_conj_only_says_3(tmp_path: Path) -> None:
+    capio = _classed(
+        "capiō", "verb", "capiō (present infinitive capere); third (-iō variant) conjugation",
+        conj="3.sigm",
+    )  # fmt: skip
+    assert _classes(tmp_path, [capio]) == {"capiō": "3io"}
+
+
+def test_an_irregular_verb_gets_irreg_even_though_its_headword_says_third(tmp_path: Path) -> None:
+    fero = _classed(
+        "ferō", "verb", "ferō (present infinitive ferre); third conjugation, suppletive",
+        conj="irreg",
+    )  # fmt: skip
+    assert _classes(tmp_path, [fero]) == {"ferō": "irreg"}
+
+
+def test_a_noun_gets_its_declension_from_the_la_ndecl_argument(tmp_path: Path) -> None:
+    rex = _classed("rēx", "noun", "rēx m (genitive rēgis); third declension", ndecl="rēx/rēg<3>")
+    assert _classes(tmp_path, [rex]) == {"rēx": "3"}
+
+
+def test_adjectives_get_1_2_or_3_from_the_headword_line(tmp_path: Path) -> None:
+    bonus = _classed("bonus", "adj", "bonus (feminine bona); first/second-declension adjective")
+    ingens = _classed("ingēns", "adj", "ingēns (genitive ingentis); third-declension adjective")
+    assert _classes(tmp_path, [bonus, ingens]) == {"bonus": "1-2", "ingēns": "3"}
+
+
+def test_a_lemma_whose_source_gives_no_class_stays_null(tmp_path: Path) -> None:
+    participle = _classed("amātus", "verb", "amātus; first/second-declension participle")
+    odd_noun = _classed("mīlle", "noun", "mīlle n; indeclinable", ndecl="mīlle<irreg+.N>")
+    one_form_adj = _classed("Roterodamēnsis", "adj", "Roterodamēnsis; Roterodamēnsis")
+    assert _classes(tmp_path, [participle, odd_noun, one_form_adj]) == {
+        "amātus": None,
+        "mīlle": None,
+        "Roterodamēnsis": None,
+    }
