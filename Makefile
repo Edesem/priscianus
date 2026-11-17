@@ -22,6 +22,7 @@ dev: ## Run backend and frontend together (Ctrl-C stops both)
 	@$(MAKE) -j2 --no-print-directory backend frontend
 
 backend: ## Run the API with auto-reload on BACKEND_PORT (default 8000)
+	set -a; [ -f .env ] && . ./.env; set +a; \
 	cd src/backend && uv run uvicorn priscianus.api.main:app --reload --port $(BACKEND_PORT)
 
 frontend: ## Run the Vite dev server on FRONTEND_PORT (default 5173)
