@@ -34,8 +34,9 @@ Answer with a JSON object with two fields:
 each word does in the sentence. This text is not checked, so put every statement about the \
 form of a word (its case, tense, person and so on) in a claim as well.
 - "claims": a list with one claim for each word the student typed, in the order typed. If a \
-word looks like a Latin word that does not exist, still make a claim for it, with your best \
-guess at the lemma, and say in "text" that it is not a real word. Each claim has four fields:
+word is not a real Latin word, still make a claim for it, but do not guess a lemma: give the \
+word itself as the lemma, "X" as upos and "None" for every feature, and say in "text" that it \
+is not a real word and what real word it resembles. Each claim has four fields:
   - "form": the word, exactly as the student typed it, but without an enclitic: for \
 "virumque" give "virum", and say in "text" that -que means "and".
   - "lemma": the dictionary form, with macrons left out.
