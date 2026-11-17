@@ -3,10 +3,12 @@
 import json
 from typing import Any
 
+import pytest
+
 from priscianus.morphology.inflect import NoSuchFormError
 from priscianus.morphology.lookup import Analysis
 from priscianus.morphology.normaliser import key_loose
-from priscianus.pipeline.tools import TOOL_DEFINITIONS, execute_tool_use
+from priscianus.pipeline.tools import TOOL_DEFINITIONS, accepted_forms, execute_tool_use
 
 
 class FakeIndex:
@@ -344,3 +346,12 @@ def test_inflect_ignores_the_person_of_a_pronoun_and_other_lemmas_that_share_the
 
     assert content(result)["forms"] == ["mihi"]
     assert content(result)["ignored"] == ["Person"]
+
+
+def test_accepted_forms_give_what_the_inflect_tool_gives_and_refuse_an_unknown_lemma() -> None:
+    index = FakeIndex([LOQUITUR])
+    features = {"Person": "3", "Number": "Sing", "Tense": "Pres", "Mood": "Ind", "Voice": "Pass"}
+
+    assert accepted_forms("loquor", features, "verb", index) == ["loquitur"]  # Voice is ignored
+    with pytest.raises(NoSuchFormError):
+        accepted_forms("flurbus", features, "verb", index)
