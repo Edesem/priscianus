@@ -96,7 +96,7 @@ def test_meta_records_version_dump_date_build_hash_and_licence(tmp_path: Path) -
     build_index(dump, db)
 
     meta = dict(sqlite3.connect(db).execute("SELECT key, value FROM meta"))
-    assert meta["schema_version"] == "3"
+    assert meta["schema_version"] == "4"
     assert meta["dump_date"] == "Wed, 21 Oct 2026 13:51:28 GMT"
     assert len(meta["build_hash"]) == 64
     assert "CC BY-SA 4.0" in meta["licence"]
@@ -448,3 +448,32 @@ def test_spot_check_of_real_deponent_headword_lines(tmp_path: Path) -> None:
         "gaudeo": 1,
         "amo": 0,
     }
+
+
+def test_a_dash_cell_is_not_indexed_but_the_real_forms_around_it_are(tmp_path: Path) -> None:
+    entry = {
+        "word": "is",
+        "pos": "pron",
+        "forms": [
+            _form("is", "nominative", "singular", "masculine"),
+            _form("-", "vocative", "singular", "masculine"),
+            _form("eī", "dative", "singular"),
+        ],
+    }
+    db = tmp_path / "morphology.db"
+
+    build_index(_write_dump(tmp_path / "dump.jsonl", [entry]), db)
+
+    forms = [r[0] for r in sqlite3.connect(db).execute("SELECT form_display FROM analyses")]
+    assert sorted(forms) == ["eī", "is"]
+
+
+def test_a_lemma_whose_only_forms_are_dashes_is_left_out(tmp_path: Path) -> None:
+    empty = {"word": "nihil", "pos": "noun", "forms": [_form("-", "vocative", "singular")]}
+    db = tmp_path / "morphology.db"
+
+    report = build_index(_write_dump(tmp_path / "dump.jsonl", [ROSA, empty]), db)
+
+    lemmas = [r[0] for r in sqlite3.connect(db).execute("SELECT lemma FROM lemmas")]
+    assert lemmas == ["rosa"]
+    assert report.skipped == {"no inflected forms": 1}

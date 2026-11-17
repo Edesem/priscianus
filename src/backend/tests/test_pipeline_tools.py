@@ -228,7 +228,6 @@ AMANDUS = reading(
     pos="verb",
 )
 ROSA_NOM = reading("rosa", "rosa", {"Case": "Nom", "Number": "Sing"})
-ROSA_PLACEHOLDER = reading("-", "rosa", {"Case": "Voc", "Number": "Plur"})
 
 
 def test_inflect_returns_the_forms_in_compact_sorted_json() -> None:
@@ -275,14 +274,6 @@ def test_inflect_does_not_ignore_a_feature_that_is_a_real_gap() -> None:
     result = run(index, "inflect", {"lemma": "amo", "features": {"Voice": "Pass"}})
 
     assert_error(result, "no_such_form")
-
-
-def test_inflect_filters_the_placeholder_form() -> None:
-    index = FakeIndex([ROSA_NOM, ROSA_PLACEHOLDER])
-
-    assert_error(
-        run(index, "inflect", {"lemma": "rosa", "features": {"Case": "Voc"}}), "no_such_form"
-    )
 
 
 def test_inflect_on_a_lemma_the_index_lacks_is_an_error_that_is_not_a_verdict() -> None:
