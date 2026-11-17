@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import re
 import sqlite3
 from collections import Counter
 from collections.abc import Sequence
@@ -68,7 +69,7 @@ _SOURCE = "wiktionary"
 # carry only a tag or two, such as the genitive or the lemma's gender, so they are not analyses.
 _TABLE_SOURCES = frozenset({"declension", "conjugation", "inflection"})
 # Bumped when the rows change, not only the columns: the hash is of the schema version and dump.
-_SCHEMA_VERSION = "4"
+_SCHEMA_VERSION = "5"
 
 # Wiktionary writes "-" in a table cell that has no form (the vocative of "is").
 _EMPTY_CELL = "-"
@@ -241,6 +242,47 @@ def _is_deponent(entry: dict[str, Any]) -> bool:
     )
 
 
+_CONJUGATIONS = {"first": "1", "second": "2", "third": "3", "fourth": "4"}
+_CONJUGATION_LINE = re.compile(
+    r";\s*(first|second|third|fourth)\s+(\(-iō variant\)\s+)?conjugation"
+)
+_ADJECTIVE_LINE = re.compile(r";\s*(first/second|third)[- ]declension\b")
+_NOUN_DECLENSION = re.compile(r"<([1-5])")
+
+
+def _infl_class(entry: dict[str, Any]) -> str | None:
+    """The conjugation or declension class, or None when Wiktionary does not give one.
+
+    Verbs: `irreg` if the la-conj template says so, else the headword line ("third
+    (-iō variant) conjugation" is `3io`; la-conj alone cannot tell it from `3`). Nouns: the
+    digit in the la-ndecl argument (`rēx/rēg<3>`). Adjectives: the headword line.
+    Participles and anything else that does not match stay None; nothing is guessed.
+    """
+    pos = entry["pos"]
+    headword = " ".join(t.get("expansion", "") for t in entry.get("head_templates", []))
+    templates = entry.get("inflection_templates", [])
+    if pos == "verb":
+        if any(t["name"] == "la-conj" and t["args"].get("1") == "irreg" for t in templates):
+            return "irreg"
+        found = _CONJUGATION_LINE.search(headword)
+        if found is None:
+            return None
+        return "3io" if found[2] else _CONJUGATIONS[found[1]]
+    if pos == "noun":
+        digits = set()
+        for template in templates:
+            found = _NOUN_DECLENSION.search(template["args"].get("1", ""))
+            if template["name"] == "la-ndecl" and found:
+                digits.add(found[1])
+        return digits.pop() if len(digits) == 1 else None
+    if pos == "adj":
+        found = _ADJECTIVE_LINE.search(headword)
+        if found is None:
+            return None
+        return "1-2" if found[1] == "first/second" else "3"
+    return None
+
+
 def _entry_degree(entry: dict[str, Any]) -> str | None:
     """Degree of a comparative or superlative lemma, from its sense tags.
 
@@ -260,12 +302,13 @@ def _add_entry(con: sqlite3.Connection, entry: dict[str, Any], report: BuildRepo
         return None
     deponent = int(_is_deponent(entry))
     cur = con.execute(
-        "INSERT INTO lemmas (lemma, lemma_display, pos, deponent, base_lemma, source)"
-        " VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO lemmas (lemma, lemma_display, pos, infl_class, deponent, base_lemma, source)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             key_loose(entry["word"]),
             entry["word"],
             entry["pos"],
+            _infl_class(entry),
             deponent,
             _base_lemma(entry),
             _SOURCE,
