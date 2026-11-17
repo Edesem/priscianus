@@ -11,7 +11,12 @@ from typing import Any
 
 from priscianus.llm.client import LLMClient
 from priscianus.morphology.lookup import Analysis
-from priscianus.pipeline.loop import LoopResult, ToolExecutor, run_with_tools
+from priscianus.pipeline.loop import (
+    MAX_CALLS_PER_ROUND,
+    LoopResult,
+    ToolExecutor,
+    run_with_tools,
+)
 from priscianus.pipeline.tools import reading_dict
 from priscianus.verifier.claims import Claim, ModelOutput, SchemaError
 from priscianus.verifier.classify import Classification, Verdict, classify
@@ -85,6 +90,7 @@ def verify_and_repair(
     system: str | None = None,
     output_schema: dict[str, Any] | None = None,
     max_repairs: int = MAX_REPAIRS,
+    max_calls_per_round: int = MAX_CALLS_PER_ROUND,
     max_tokens: int = 4096,
     temperature: float | None = None,
     sample: int = 0,
@@ -107,6 +113,7 @@ def verify_and_repair(
             executor,
             system=system,
             output_schema=output_schema,
+            max_calls_per_round=max_calls_per_round,
             max_tokens=max_tokens,
             temperature=temperature,
             sample=sample,
