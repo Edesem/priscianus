@@ -6,6 +6,7 @@ from typing import Protocol
 
 from priscianus.morphology.build_index import DEFAULT_DB
 from priscianus.morphology.inflect import inflect
+from priscianus.morphology.lemmas import LemmaInfo, list_lemmas
 from priscianus.morphology.lookup import Analysis, lookup_form
 from priscianus.morphology.normaliser import key_loose
 
@@ -21,6 +22,19 @@ class MorphologyIndex(Protocol):
 
     def inflect(self, lemma: str, features: dict[str, str], pos: str | None = None) -> list[str]:
         """Every indexed spelling of `lemma` with `features`; raises `NoSuchFormError` if none."""
+        ...
+
+    def list_lemmas(
+        self,
+        *,
+        pos: str | None = None,
+        infl_class: str | None = None,
+        deponent: bool | None = None,
+        freq_band: str | None = None,
+        limit: int = 20,
+        seed: int = 0,
+    ) -> list[LemmaInfo]:
+        """Up to `limit` lemmas with a form that match the filters, sampled with `seed`."""
         ...
 
 
@@ -45,6 +59,26 @@ class SqliteIndex:
 
     def inflect(self, lemma: str, features: dict[str, str], pos: str | None = None) -> list[str]:
         return inflect(lemma, features, pos, self._db)
+
+    def list_lemmas(
+        self,
+        *,
+        pos: str | None = None,
+        infl_class: str | None = None,
+        deponent: bool | None = None,
+        freq_band: str | None = None,
+        limit: int = 20,
+        seed: int = 0,
+    ) -> list[LemmaInfo]:
+        return list_lemmas(
+            self._db,
+            pos=pos,
+            infl_class=infl_class,
+            deponent=deponent,
+            freq_band=freq_band,
+            limit=limit,
+            seed=seed,
+        )
 
     def has_lemma(self, lemma: str) -> bool:
         con = sqlite3.connect(self._db)
