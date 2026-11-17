@@ -194,6 +194,18 @@ def _unrecorded(index: MorphologyIndex, lemma: str, forms: list[str]) -> set[str
     return unrecorded
 
 
+def accepted_forms(
+    lemma: str, features: dict[str, str], pos: str | None, index: MorphologyIndex
+) -> list[str]:
+    """The forms the `inflect` tool would give, by the same path (feature translation, relaxing).
+
+    Raises `NoSuchFormError` if the lemma is unknown or has no such form.
+    """
+    if not any(index.has_lemma(key) for key in lemma_keys(lemma)):
+        raise NoSuchFormError(f"The index does not hold the lemma {lemma!r}")
+    return _forms(lemma, features, pos, index)[0]
+
+
 def _index_encoding(features: dict[str, str]) -> dict[str, str]:
     if features.get("VerbForm") == "Gdv":
         return {**features, **_GERUNDIVE}
