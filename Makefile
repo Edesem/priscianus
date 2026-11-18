@@ -70,8 +70,8 @@ eval-data: ## Download the UD Latin treebanks (pinned r2.18) into src/data/raw/u
 eval: ## Run an eval, e.g. make eval ARGS="run --mode raw --set parse --split dev --limit 20"
 	cd src/evals && uv run python -m evals $(ARGS)
 
-eval-smoke: ## Run the eval smoke test (not yet implemented)
-	@echo "The CI smoke eval arrives in Milestone 4 (docs/plan.md, section 5)."
+eval-smoke: ## Run the 50-item smoke eval; exits 1 if a threshold is crossed (ADR-005)
+	cd src/evals && uv run python -m evals smoke
 
 parse: ## Parse a Latin word, e.g. make parse WORD=amabat (needs make data)
 	@test -n "$(WORD)" || { echo "Usage: make parse WORD=amabat"; exit 1; }

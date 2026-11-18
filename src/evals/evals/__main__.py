@@ -12,6 +12,7 @@ from priscianus.llm.config import HAIKU
 from priscianus.morphology.lookup import lookup_form
 from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
+from evals import smoke
 from evals.env import load_env
 from evals.gold import read_conllu
 from evals.index_agreement import Agreement, evaluate, sample_disagreements
@@ -107,7 +108,62 @@ def main(
         action="store_true",
         help="Use the verdicts that `score` stored under the current index build",
     )
+    build_smoke = commands.add_parser(
+        "build-smoke", help="Draw and freeze the smoke set from the parse set's dev items"
+    )
+    build_smoke.add_argument("--version", required=True, help="Manifest version, e.g. v1")
+    build_smoke.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    build_smoke.add_argument(
+        "--parse-manifest", type=Path, default=_DATA / "eval_sets" / "parse-v1.jsonl"
+    )
+    build_smoke.add_argument("--out-dir", type=Path, default=_DATA / "eval_sets")
+    smoke_run = commands.add_parser(
+        "smoke", help="Run the smoke set and exit 1 if a threshold is crossed (the CI check)"
+    )
+    smoke_run.add_argument("--manifest", type=Path, default=_DATA / "eval_sets" / "smoke-v1.jsonl")
+    smoke_run.add_argument("--ud-dir", type=Path, default=_DATA / "raw" / "ud")
+    smoke_run.add_argument("--store", type=Path, default=_RESULTS / "evals.db")
+    smoke_run.add_argument("--llm-db", type=Path, default=_RESULTS / "llm.db")
+    smoke_run.add_argument("--max-cost", type=float, default=0.50, help="Stop at this many USD")
+    smoke_run.add_argument("--concurrency", type=_positive_int, default=4)
     options = parser.parse_args(argv)
+
+    if options.command == "build-smoke":
+        try:
+            path = smoke.build_smoke_set(
+                options.parse_manifest, options.out_dir, version=options.version, seed=options.seed
+            )
+        except FileExistsError as error:
+            print(error, file=sys.stderr)
+            return 2
+        print(f"Wrote {path}")
+        return 0
+
+    if options.command == "smoke":
+        store = EvalStore(options.store)
+        morphology = index or SqliteIndex()
+        key = RunKey(
+            SET_NAME,
+            options.manifest.stem,
+            "dev",
+            smoke.MODE,
+            smoke.MODEL,
+            PROMPT_IDS[smoke.MODE],
+        )
+        cap = options.max_cost - store.spent_usd_for(key)
+        summary, counts = smoke.run_smoke(
+            options.manifest,
+            options.ud_dir,
+            make_client(spend_cap_usd=cap, db_path=options.llm_db),
+            morphology,
+            store,
+            git_commit=_git_commit(),
+            index_build_hash=_build_hash(morphology),
+            concurrency=options.concurrency,
+        )
+        failures = smoke.check_smoke(counts, smoke.THRESHOLDS)
+        print(smoke.render_result(summary, counts, failures, smoke.THRESHOLDS))
+        return 0 if summary.status == "complete" and not failures else 1
 
     if options.command == "score":
         store = EvalStore(options.store)
