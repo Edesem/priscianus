@@ -247,3 +247,41 @@ def test_an_allowed_origin_may_call_the_api_and_others_may_not(tmp_path: Path) -
 
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:5173"
     assert "access-control-allow-origin" not in other.headers
+
+
+def test_grade_ignores_an_answer_key_sent_by_the_browser(
+    make_app: Callable[..., TestClient],
+) -> None:
+    body = {
+        "lemma": "amo",
+        "pos": "verb",
+        "features": PERFECT_3PL,
+        "answer": "amaverunt",
+        "accepted": ["blorp"],
+    }
+    wrong = {**body, "answer": "blorp"}
+    app_client = make_app(ScriptedAPI(), DrillIndex())
+
+    right = app_client.post("/api/grade", json=body)
+    tampered = app_client.post("/api/grade", json=wrong)
+
+    assert right.status_code == 200
+    assert right.json()["correct"] is True
+    assert right.json()["accepted"] == ["amāvērunt", "amārunt", "amāvēre"]
+    assert tampered.json()["correct"] is False
+
+
+def test_grade_makes_no_model_call_and_refuses_an_unanswerable_item(
+    make_app: Callable[..., TestClient],
+) -> None:
+    api = ScriptedAPI()
+    app_client = make_app(api, DrillIndex())
+    item_body = {"lemma": "amo", "pos": "verb", "answer": "amat"}
+
+    good = app_client.post("/api/grade", json={**item_body, "features": PERFECT_3PL})
+    bad = app_client.post("/api/grade", json={**item_body, "features": {"Person": "3"}})
+
+    assert good.status_code == 200
+    assert bad.status_code == 422
+    assert bad.json()["error"] == "invalid_input"
+    assert api.messages.calls == []
