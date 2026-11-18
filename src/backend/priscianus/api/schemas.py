@@ -162,6 +162,7 @@ class FeedbackError(BaseModel):
 
     error: str
     message: str
+    resets_at: str | None = None
 
 
 class FeedbackResponse(BaseModel):

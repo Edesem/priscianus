@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from priscianus.api.limits import DailyLimitExceeded, Limits
 from priscianus.api.schemas import (
     DrillsRequest,
     DrillsResponse,
@@ -40,8 +41,9 @@ def create_app(
     *,
     index: MorphologyIndex | None = None,
     client: LLMClient | None = None,
+    limits: Limits | None = None,
 ) -> FastAPI:
-    """Build the app. Tests pass a fake `index` and a `client` over a scripted API.
+    """Build the app. Tests pass a fake `index`, a `client` over a scripted API, and `limits`.
 
     Whatever is not passed is built once at start-up, from `settings`, and shared by all requests.
     """
@@ -51,6 +53,14 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.index = index or SqliteIndex(settings.morphology_db)
         app.state.client = client or LLMClient.from_env(db_path=settings.llm_db)
+        app.state.limits = limits or Limits(
+            settings.limits_db,
+            settings.llm_db,
+            request_limit=settings.daily_request_limit,
+            ip_limit=settings.ip_daily_limit,
+            spend_cap_usd=settings.daily_spend_cap_usd,
+            salt=settings.ip_hash_salt,
+        )
         yield
 
     app = FastAPI(title="Priscianus", lifespan=lifespan)
@@ -67,16 +77,24 @@ def create_app(
         return {"status": "ok"}
 
     # A plain `def`, so FastAPI runs it in a worker thread: it waits on the model.
-    @app.post("/api/explain", responses={422: {"model": ErrorBody}, 503: {"model": ErrorBody}})
+    @app.post(
+        "/api/explain",
+        responses={422: {"model": ErrorBody}, 429: {"model": ErrorBody}, 503: {"model": ErrorBody}},
+    )
     def explain_endpoint(body: ExplainRequest, request: Request) -> ExplainResponse:
-        result = explain(body.text, request.app.state.client, request.app.state.index)
+        with request.app.state.limits.counted(*_who(request)):
+            result = explain(body.text, request.app.state.client, request.app.state.index)
         return explain_response(result)
 
-    @app.post("/api/drills", responses={422: {"model": ErrorBody}, 503: {"model": ErrorBody}})
+    @app.post(
+        "/api/drills",
+        responses={422: {"model": ErrorBody}, 429: {"model": ErrorBody}, 503: {"model": ErrorBody}},
+    )
     def drills_endpoint(body: DrillsRequest, request: Request) -> DrillsResponse:
-        result = make_drills(
-            body.request, request.app.state.client, request.app.state.index, body.count
-        )
+        with request.app.state.limits.counted(*_who(request)):
+            result = make_drills(
+                body.request, request.app.state.client, request.app.state.index, body.count
+            )
         return drills_response(result)
 
     # No model is called here, so it is free and is not counted against the daily limit.
@@ -91,9 +109,16 @@ def create_app(
         index, client = request.app.state.index, request.app.state.client
         result = grade(body.lemma, body.pos, body.features, body.answer, index)
         try:
-            written = feedback(
-                body.lemma, body.pos, body.features, body.answer, result, client, index
+            with request.app.state.limits.counted(*_who(request)):
+                written = feedback(
+                    body.lemma, body.pos, body.features, body.answer, result, client, index
+                )
+        except DailyLimitExceeded as exc:
+            message = "You have used today's AI requests. Grading still works."
+            error = FeedbackError(
+                error="daily_limit", message=message, resets_at=exc.resets_at.isoformat()
             )
+            return feedback_response(result, None, error)
         except SpendCapExceeded:
             message = "The tutor has reached its spending limit. Try again later."
             error = FeedbackError(error="spend_cap", message=message)
@@ -109,6 +134,12 @@ def create_app(
 
 def _error(status: int, code: str, message: str) -> JSONResponse:
     return JSONResponse(status_code=status, content={"error": code, "message": message})
+
+
+def _who(request: Request) -> tuple[str | None, str]:
+    """The browser's `X-Client-Id` (if sent) and its IP address, for the daily limits."""
+    ip = request.headers.get("Fly-Client-IP") or (request.client.host if request.client else "")
+    return request.headers.get("X-Client-Id"), ip
 
 
 def _add_error_handlers(app: FastAPI) -> None:
@@ -127,6 +158,16 @@ def _add_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(GradeInputError)
     def bad_text(request: Request, exc: ExplainInputError) -> JSONResponse:
         return _error(422, "invalid_input", str(exc))
+
+    @app.exception_handler(DailyLimitExceeded)
+    def daily_limit(request: Request, exc: DailyLimitExceeded) -> JSONResponse:
+        content = {
+            "error": "daily_limit",
+            "message": "You have used today's AI requests. Try again after the reset.",
+            "resets_at": exc.resets_at.isoformat(),
+        }
+        headers = {"Retry-After": str(exc.retry_after)}
+        return JSONResponse(status_code=429, content=content, headers=headers)
 
     @app.exception_handler(SpendCapExceeded)
     def spend_cap(request: Request, exc: SpendCapExceeded) -> JSONResponse:
