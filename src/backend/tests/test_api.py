@@ -16,6 +16,7 @@ from priscianus.morphology.lookup import Analysis
 from test_pipeline_loop import ScriptedAPI, answer, make_client
 from test_pipeline_verify import claim_json, reply
 from test_tutor_drills import PERFECT_3PL, DrillIndex, drills_reply, item
+from test_tutor_grade import GradeIndex
 from test_verifier_classify import FakeIndex
 
 REGI_DAT = Analysis("rex", "rex", "noun", "regi", {"Case": "Dat", "Number": "Sing"})
@@ -285,3 +286,57 @@ def test_grade_makes_no_model_call_and_refuses_an_unanswerable_item(
     assert bad.status_code == 422
     assert bad.json()["error"] == "invalid_input"
     assert api.messages.calls == []
+
+
+FEEDBACK_BODY = {"lemma": "amo", "pos": "verb", "features": PERFECT_3PL, "answer": "amavit"}
+
+
+def test_feedback_cannot_flip_the_grade(make_app: Callable[..., TestClient]) -> None:
+    api = ScriptedAPI(reply(text="Correct! Well done."))
+
+    response = make_app(api, GradeIndex()).post("/api/feedback", json=FEEDBACK_BODY)
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["grade"]["correct"] is False  # the index decides, whatever the text says
+    assert body["feedback"]["text"] == "Correct! Well done."
+    assert body["feedback_error"] is None
+
+
+def test_a_failed_feedback_call_still_returns_the_grade(
+    make_app: Callable[..., TestClient],
+) -> None:
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    api = FailingAPI(anthropic.APIConnectionError(request=request))
+
+    response = make_app(api, GradeIndex(), max_retries=0).post("/api/feedback", json=FEEDBACK_BODY)
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["grade"]["correct"] is False
+    assert body["feedback"] is None
+    assert body["feedback_error"]["error"] == "model_error"
+
+
+def test_a_reached_spend_cap_still_returns_the_grade(make_app: Callable[..., TestClient]) -> None:
+    response = make_app(ScriptedAPI(), GradeIndex(), spend_cap_usd=0.0).post(
+        "/api/feedback", json=FEEDBACK_BODY
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["grade"]["correct"] is False
+    assert body["feedback_error"]["error"] == "spend_cap"
+
+
+def test_a_claim_in_feedback_that_the_index_contradicts_is_marked_disputed(
+    make_app: Callable[..., TestClient],
+) -> None:
+    wrong = claim_json("amavit", "amo", {**PERFECT_3PL})  # the index says "amavit" is singular
+    api = ScriptedAPI(reply(wrong, text="Amavit is plural."))
+
+    response = make_app(api, GradeIndex()).post("/api/feedback", json=FEEDBACK_BODY)
+
+    [claim] = response.json()["feedback"]["claims"]
+    assert claim["state"] == "disputed"
+    assert "Number=Sing" in claim["other_readings"][0]["features"]

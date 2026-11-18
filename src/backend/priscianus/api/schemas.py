@@ -6,6 +6,7 @@ from priscianus.morphology.lookup import Analysis
 from priscianus.pipeline.verify import VerifiedClaim
 from priscianus.tutor.drills import MAX_COUNT, DrillSet
 from priscianus.tutor.explain import ExplainResult
+from priscianus.tutor.feedback import Feedback
 from priscianus.tutor.grade import Grade
 from priscianus.tutor.words import WordResult
 
@@ -145,3 +146,37 @@ def grade_response(result: Grade) -> GradeResponse:
     ]
     accepted = list(result.accepted)
     return GradeResponse(correct=result.correct, accepted=accepted, answer_is=answer_is)
+
+
+class FeedbackOut(BaseModel):
+    """The model's text (not checked) and its claims, each with a state like explain's."""
+
+    text: str
+    model: str
+    prompt_id: str
+    claims: list[ClaimOut]
+
+
+class FeedbackError(BaseModel):
+    """Why there is no feedback. The grade is still returned."""
+
+    error: str
+    message: str
+
+
+class FeedbackResponse(BaseModel):
+    grade: GradeResponse
+    feedback: FeedbackOut | None
+    feedback_error: FeedbackError | None
+
+
+def feedback_response(
+    grade: Grade, result: Feedback | None, error: FeedbackError | None = None
+) -> FeedbackResponse:
+    out = None
+    if result is not None:
+        claims = [_claim(c) for c in result.claims]
+        out = FeedbackOut(
+            text=result.text, model=result.model, prompt_id=result.prompt_id, claims=claims
+        )
+    return FeedbackResponse(grade=grade_response(grade), feedback=out, feedback_error=error)

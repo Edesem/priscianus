@@ -1,5 +1,5 @@
-"""The HTTP layer: what every endpoint shares, `/api/explain`, `/api/drills` and `/api/grade`
-(ADR-005, Decision 1).
+"""The HTTP layer: what every endpoint shares, `/api/explain`, `/api/drills`, `/api/grade` and
+`/api/feedback` (ADR-005, Decision 1).
 """
 
 from collections.abc import AsyncIterator
@@ -17,16 +17,20 @@ from priscianus.api.schemas import (
     ErrorBody,
     ExplainRequest,
     ExplainResponse,
+    FeedbackError,
+    FeedbackResponse,
     GradeRequest,
     GradeResponse,
     drills_response,
     explain_response,
+    feedback_response,
     grade_response,
 )
 from priscianus.api.settings import Settings
 from priscianus.llm.client import LLMClient, SpendCapExceeded
 from priscianus.tutor.drills import DrillInputError, DrillModelError, make_drills
 from priscianus.tutor.explain import ExplainInputError, ExplainModelError, explain
+from priscianus.tutor.feedback import FeedbackModelError, feedback
 from priscianus.tutor.grade import GradeInputError, grade
 from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
@@ -81,6 +85,25 @@ def create_app(
         result = grade(body.lemma, body.pos, body.features, body.answer, request.app.state.index)
         return grade_response(result)
 
+    # The grade is free and always comes back. If the model fails, only the feedback is missing.
+    @app.post("/api/feedback", responses={422: {"model": ErrorBody}})
+    def feedback_endpoint(body: GradeRequest, request: Request) -> FeedbackResponse:
+        index, client = request.app.state.index, request.app.state.client
+        result = grade(body.lemma, body.pos, body.features, body.answer, index)
+        try:
+            written = feedback(
+                body.lemma, body.pos, body.features, body.answer, result, client, index
+            )
+        except SpendCapExceeded:
+            message = "The tutor has reached its spending limit. Try again later."
+            error = FeedbackError(error="spend_cap", message=message)
+            return feedback_response(result, None, error)
+        except (FeedbackModelError, anthropic.APIError):
+            message = "The tutor could not write feedback just now."
+            error = FeedbackError(error="model_error", message=message)
+            return feedback_response(result, None, error)
+        return feedback_response(result, written)
+
     return app
 
 
@@ -93,6 +116,7 @@ def _add_error_handlers(app: FastAPI) -> None:
     def bad_request(request: Request, exc: RequestValidationError) -> JSONResponse:
         examples = {
             "/api/drills": '{"request": "perfect tense of amo"}',
+            "/api/feedback": '{"lemma": "amo", "pos": "verb", "features": {...}, "answer": "amat"}',
             "/api/grade": '{"lemma": "amo", "pos": "verb", "features": {...}, "answer": "amat"}',
         }
         example = examples.get(request.url.path, '{"text": "Arma virumque cano."}')
