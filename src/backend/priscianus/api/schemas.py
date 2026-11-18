@@ -6,6 +6,7 @@ from priscianus.morphology.lookup import Analysis
 from priscianus.pipeline.verify import VerifiedClaim
 from priscianus.tutor.drills import MAX_COUNT, DrillSet
 from priscianus.tutor.explain import ExplainResult
+from priscianus.tutor.grade import Grade
 from priscianus.tutor.words import WordResult
 
 MAX_OTHER_READINGS = 50
@@ -18,6 +19,15 @@ class ExplainRequest(BaseModel):
 class DrillsRequest(BaseModel):
     request: str
     count: int = MAX_COUNT
+
+
+class GradeRequest(BaseModel):
+    """An item and the learner's answer. Any other field (such as an answer key) is ignored."""
+
+    lemma: str
+    pos: str
+    features: dict[str, str]
+    answer: str
 
 
 class ErrorBody(BaseModel):
@@ -113,3 +123,25 @@ def drills_response(result: DrillSet) -> DrillsResponse:
         for i in result.items
     ]
     return DrillsResponse(message=result.message, shortfall=result.shortfall, items=items)
+
+
+class AnswerIsOut(BaseModel):
+    lemma: str
+    form: str
+    features: str
+    same_lemma: bool
+
+
+class GradeResponse(BaseModel):
+    correct: bool
+    accepted: list[str]
+    answer_is: list[AnswerIsOut]
+
+
+def grade_response(result: Grade) -> GradeResponse:
+    answer_is = [
+        AnswerIsOut(lemma=r.lemma, form=r.form, features=r.features, same_lemma=r.same_lemma)
+        for r in result.answer_is
+    ]
+    accepted = list(result.accepted)
+    return GradeResponse(correct=result.correct, accepted=accepted, answer_is=answer_is)

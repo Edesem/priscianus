@@ -1,4 +1,4 @@
-"""The HTTP layer: what every endpoint shares, `POST /api/explain` and `POST /api/drills`
+"""The HTTP layer: what every endpoint shares, `/api/explain`, `/api/drills` and `/api/grade`
 (ADR-005, Decision 1).
 """
 
@@ -17,13 +17,17 @@ from priscianus.api.schemas import (
     ErrorBody,
     ExplainRequest,
     ExplainResponse,
+    GradeRequest,
+    GradeResponse,
     drills_response,
     explain_response,
+    grade_response,
 )
 from priscianus.api.settings import Settings
 from priscianus.llm.client import LLMClient, SpendCapExceeded
 from priscianus.tutor.drills import DrillInputError, DrillModelError, make_drills
 from priscianus.tutor.explain import ExplainInputError, ExplainModelError, explain
+from priscianus.tutor.grade import GradeInputError, grade
 from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
 
@@ -71,6 +75,12 @@ def create_app(
         )
         return drills_response(result)
 
+    # No model is called here, so it is free and is not counted against the daily limit.
+    @app.post("/api/grade", responses={422: {"model": ErrorBody}})
+    def grade_endpoint(body: GradeRequest, request: Request) -> GradeResponse:
+        result = grade(body.lemma, body.pos, body.features, body.answer, request.app.state.index)
+        return grade_response(result)
+
     return app
 
 
@@ -81,15 +91,16 @@ def _error(status: int, code: str, message: str) -> JSONResponse:
 def _add_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     def bad_request(request: Request, exc: RequestValidationError) -> JSONResponse:
-        example = (
-            '{"request": "perfect tense of amo"}'
-            if request.url.path == "/api/drills"
-            else '{"text": "Arma virumque cano."}'
-        )
+        examples = {
+            "/api/drills": '{"request": "perfect tense of amo"}',
+            "/api/grade": '{"lemma": "amo", "pos": "verb", "features": {...}, "answer": "amat"}',
+        }
+        example = examples.get(request.url.path, '{"text": "Arma virumque cano."}')
         return _error(422, "invalid_input", f"Send JSON like {example}.")
 
     @app.exception_handler(ExplainInputError)
     @app.exception_handler(DrillInputError)
+    @app.exception_handler(GradeInputError)
     def bad_text(request: Request, exc: ExplainInputError) -> JSONResponse:
         return _error(422, "invalid_input", str(exc))
 
