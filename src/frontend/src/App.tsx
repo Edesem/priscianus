@@ -30,9 +30,11 @@ function App() {
       <main>{view === "explain" ? <h2>Explain</h2> : <h2>Drills</h2>}</main>
 
       <footer>
-        Latin word data from Wiktionary (English Wiktionary contributors), CC
-        BY-SA 4.0, extracted with Wiktextract (kaikki.org). The database built
-        from it is also CC BY-SA 4.0.
+        Latin word data from Wiktionary (English Wiktionary contributors, CC
+        BY-SA 4.0 and GFDL), extracted by Wiktextract and distributed via
+        kaikki.org. Tatu Ylonen, "Wiktextract: Wiktionary as Machine-Readable
+        Structured Data", Proceedings of LREC 2022, pp. 1317-1325. The database
+        built from it is also CC BY-SA 4.0.
       </footer>
     </>
   );

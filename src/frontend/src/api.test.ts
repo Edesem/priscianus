@@ -68,3 +68,11 @@ test("calls send the same X-Client-Id every time, as JSON to /api/<endpoint>", a
   expect(ids[0]).toBeTruthy();
   expect(ids[1]).toBe(ids[0]);
 });
+
+test("a success reply that is not JSON becomes a friendly message", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response("<html>oops</html>")),
+  );
+  await expect(explain({ text: "rex" })).rejects.toThrow(/unexpected reply/i);
+});

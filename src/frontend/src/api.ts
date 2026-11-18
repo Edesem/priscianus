@@ -135,7 +135,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     const errorBody = await response.json().catch(() => null);
     throw new ApiError(messageFor(response.status, errorBody));
   }
-  return (await response.json()) as T;
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new ApiError("The tutor sent an unexpected reply. Please try again.");
+  }
 }
 
 export const explain = (req: ExplainRequest) =>

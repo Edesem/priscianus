@@ -20,10 +20,10 @@ test("shows the Wiktionary attribution on every view", async () => {
   const user = userEvent.setup();
   render(<App />);
   const footer = screen.getByRole("contentinfo");
-  expect(footer).toHaveTextContent(
-    "Wiktionary (English Wiktionary contributors)",
-  );
-  expect(footer).toHaveTextContent("CC BY-SA 4.0");
+  expect(footer).toHaveTextContent("English Wiktionary contributors");
+  expect(footer).toHaveTextContent("CC BY-SA 4.0 and GFDL");
+  expect(footer).toHaveTextContent("kaikki.org");
+  expect(footer).toHaveTextContent("Ylonen");
 
   await user.click(screen.getByRole("button", { name: "Drills" }));
   expect(screen.getByRole("contentinfo")).toHaveTextContent("Wiktionary");
