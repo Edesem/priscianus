@@ -52,3 +52,87 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm test --run
+
+  # Runs the 50-item smoke eval (ADR-005, Decision 9). It calls the Anthropic API,
+  # so it needs the ANTHROPIC_API_KEY repository secret. Pull requests that cannot
+  # see secrets (Dependabot, forks) skip the eval with a message instead of failing.
+  smoke-eval:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Check for the API key
+        id: key
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Smoke eval skipped::ANTHROPIC_API_KEY is not available to this pull request (Dependabot and fork PRs cannot read secrets). The eval did not run."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.present == 'true'
+      - uses: astral-sh/setup-uv@v5
+        if: steps.key.outputs.present == 'true'
+
+      # The index is not rebuilt here: the Wiktionary dump is not pinned, so a
+      # rebuild would not match the baseline. It comes from the release asset
+      # named in src/data/index-release.json, and is cached on that file's hash.
+      - name: Check for the index release file
+        id: release
+        if: steps.key.outputs.present == 'true'
+        run: |
+          if [ -f src/data/index-release.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Smoke eval skipped::src/data/index-release.json does not exist yet (ADR-005 F3), so there is no index to run against. The eval did not run."
+          fi
+
+      - name: Cache the index
+        id: index-cache
+        if: steps.release.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: src/data/morphology.db
+          key: index-${{ hashFiles('src/data/index-release.json') }}
+
+      - name: Download the index
+        if: steps.release.outputs.present == 'true' && steps.index-cache.outputs.cache-hit != 'true'
+        run: |
+          url=$(jq -r .url src/data/index-release.json)
+          sha256=$(jq -r .sha256 src/data/index-release.json)
+          curl -fsSL "$url" -o src/data/morphology.db
+          echo "$sha256  src/data/morphology.db" | sha256sum --check
+
+      - name: Cache the UD treebanks
+        id: ud-cache
+        if: steps.release.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: src/data/raw/ud
+          key: ud-${{ hashFiles('src/data/scripts/download_ud_latin.py') }}
+
+      - name: Download the UD treebanks
+        if: steps.release.outputs.present == 'true' && steps.ud-cache.outputs.cache-hit != 'true'
+        run: make eval-data
+
+      - run: uv sync
+        if: steps.release.outputs.present == 'true'
+        working-directory: src/evals
+
+      # A cache entry cannot be overwritten, so every run saves a new one (run ID in
+      # the key) and starts from the latest one with the same prompts (restore-keys).
+      - name: Restore the response cache
+        if: steps.release.outputs.present == 'true'
+        uses: actions/cache@v4
+        with:
+          path: src/evals/results/llm.db
+          key: llm-${{ hashFiles('src/evals/evals/*_prompt.py') }}-${{ github.run_id }}
+          restore-keys: llm-${{ hashFiles('src/evals/evals/*_prompt.py') }}-
+
+      - name: Run the smoke eval
+        if: steps.release.outputs.present == 'true'
+        run: make eval-smoke ARGS="--max-cost 0.50"
