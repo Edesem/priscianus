@@ -84,3 +84,38 @@ footer {
   padding: 16px 0;
   font-size: 14px;
 }
+
+/* Trust badges: colours from ADR-005, Decision 5 (dark text on a light tint). */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.2em 0.6em;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.9em;
+}
+button.trust-badge {
+  cursor: pointer;
+}
+.trust-parse {
+  margin-left: 0.4em;
+  font-style: italic;
+}
+.trust-verified {
+  color: #14532d;
+  background: #dcfce7;
+}
+.trust-ambiguous {
+  color: #1e3a8a;
+  background: #dbeafe;
+}
+.trust-unverifiable {
+  color: #374151;
+  background: #f3f4f6;
+}
+.trust-disputed {
+  color: #7c2d12;
+  background: #ffedd5;
+}
