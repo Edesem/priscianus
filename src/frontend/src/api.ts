@@ -101,7 +101,7 @@ function clientId(): string {
   }
 }
 
-function messageFor(
+export function messageFor(
   status: number,
   body: { error?: string; message?: string } | null,
 ): string {
