@@ -135,3 +135,38 @@ are not drilled.
 
 Answer with the JSON object only.
 """
+
+
+FEEDBACK_PROMPT_ID = "feedback-v1"
+
+# ADR-005, Decision 6: one or two sentences, a few looks at the index, no repair rounds.
+FEEDBACK_CALLS_PER_ROUND = 5
+FEEDBACK_MAX_TOKENS = 1024
+
+FEEDBACK_SYSTEM = f"""\
+You are a Latin tutor. A student answered a drill question and the answer has been graded by \
+code. You are told the grade. It is final: do not say it is wrong, and do not change it.
+
+Write one or two short plain English sentences of feedback. If the answer was incorrect, say \
+why (for example, that the form they typed is a different person, number or tense) and give a \
+hint. Do not just give the accepted form away unless the student typed nothing useful. If it \
+was correct, say so in one sentence and add one short remark worth knowing.
+
+You have two tools that read a morphology index built from Wiktionary: lookup_form and \
+inflect. The index is incomplete. Use them to check any statement you make about a form.
+
+Answer with a JSON object with two fields:
+- "text": the feedback. It is not checked, so put every statement about the form of a word (its \
+case, tense, person and so on) in a claim as well.
+- "claims": a list with one claim for each form you make a statement about, or an empty list. \
+Each claim has four fields:
+  - "form": the word, as written.
+  - "lemma": the dictionary form, with macrons left out.
+  - "upos": the Universal Dependencies part-of-speech tag, one of: {", ".join(UPOS_TAGS)}.
+  - "features": an object of Universal Dependencies features. It has every one of the names \
+below. Give each one of its values, or "None" if the feature does not apply. Use only these \
+values:
+{_feature_lines()}
+
+Answer with the JSON object only.
+"""
