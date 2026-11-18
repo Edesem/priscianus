@@ -10,6 +10,8 @@ from pathlib import Path
 from priscianus.llm.client import DEFAULT_DB as DEFAULT_LLM_DB
 from priscianus.morphology.build_index import DEFAULT_DB as DEFAULT_MORPHOLOGY_DB
 
+DEFAULT_LIMITS_DB = Path("limits.db")
+
 # Where `make dev` serves the front end.
 DEFAULT_ORIGINS = ("http://localhost:5173",)
 
@@ -19,6 +21,11 @@ class Settings:
     allowed_origins: tuple[str, ...] = DEFAULT_ORIGINS
     morphology_db: Path = DEFAULT_MORPHOLOGY_DB
     llm_db: Path = DEFAULT_LLM_DB
+    limits_db: Path = DEFAULT_LIMITS_DB
+    daily_request_limit: int = 20
+    ip_daily_limit: int = 20
+    daily_spend_cap_usd: float = 0.50
+    ip_hash_salt: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -32,4 +39,9 @@ class Settings:
             ),
             morphology_db=Path(os.environ.get("MORPHOLOGY_DB", DEFAULT_MORPHOLOGY_DB)),
             llm_db=Path(os.environ.get("LLM_DB", DEFAULT_LLM_DB)),
+            limits_db=Path(os.environ.get("LIMITS_DB", DEFAULT_LIMITS_DB)),
+            daily_request_limit=int(os.environ.get("DAILY_REQUEST_LIMIT", 20)),
+            ip_daily_limit=int(os.environ.get("IP_DAILY_LIMIT", 20)),
+            daily_spend_cap_usd=float(os.environ.get("DAILY_SPEND_CAP_USD", 0.50)),
+            ip_hash_salt=os.environ.get("IP_HASH_SALT", ""),
         )
