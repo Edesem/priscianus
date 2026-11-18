@@ -1,4 +1,6 @@
-"""The HTTP layer: what every endpoint shares, and `POST /api/explain` (ADR-005, Decision 1)."""
+"""The HTTP layer: what every endpoint shares, `POST /api/explain` and `POST /api/drills`
+(ADR-005, Decision 1).
+"""
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -9,9 +11,18 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from priscianus.api.schemas import ErrorBody, ExplainRequest, ExplainResponse, explain_response
+from priscianus.api.schemas import (
+    DrillsRequest,
+    DrillsResponse,
+    ErrorBody,
+    ExplainRequest,
+    ExplainResponse,
+    drills_response,
+    explain_response,
+)
 from priscianus.api.settings import Settings
 from priscianus.llm.client import LLMClient, SpendCapExceeded
+from priscianus.tutor.drills import DrillInputError, DrillModelError, make_drills
 from priscianus.tutor.explain import ExplainInputError, ExplainModelError, explain
 from priscianus.verifier.index import MorphologyIndex, SqliteIndex
 
@@ -53,6 +64,13 @@ def create_app(
         result = explain(body.text, request.app.state.client, request.app.state.index)
         return explain_response(result)
 
+    @app.post("/api/drills", responses={422: {"model": ErrorBody}, 503: {"model": ErrorBody}})
+    def drills_endpoint(body: DrillsRequest, request: Request) -> DrillsResponse:
+        result = make_drills(
+            body.request, request.app.state.client, request.app.state.index, body.count
+        )
+        return drills_response(result)
+
     return app
 
 
@@ -63,9 +81,15 @@ def _error(status: int, code: str, message: str) -> JSONResponse:
 def _add_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     def bad_request(request: Request, exc: RequestValidationError) -> JSONResponse:
-        return _error(422, "invalid_input", 'Send JSON like {"text": "Arma virumque cano."}.')
+        example = (
+            '{"request": "perfect tense of amo"}'
+            if request.url.path == "/api/drills"
+            else '{"text": "Arma virumque cano."}'
+        )
+        return _error(422, "invalid_input", f"Send JSON like {example}.")
 
     @app.exception_handler(ExplainInputError)
+    @app.exception_handler(DrillInputError)
     def bad_text(request: Request, exc: ExplainInputError) -> JSONResponse:
         return _error(422, "invalid_input", str(exc))
 
@@ -76,6 +100,7 @@ def _add_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(ExplainModelError)
+    @app.exception_handler(DrillModelError)
     @app.exception_handler(anthropic.APIError)
     def model_error(request: Request, exc: Exception) -> JSONResponse:
         return _error(503, "model_error", "The tutor could not answer just now. Please try again.")
