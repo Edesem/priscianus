@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Explain from "./Explain";
 
 type View = "explain" | "drills";
 
@@ -27,7 +28,7 @@ function App() {
         </nav>
       </header>
 
-      <main>{view === "explain" ? <h2>Explain</h2> : <h2>Drills</h2>}</main>
+      <main>{view === "explain" ? <Explain /> : <h2>Drills</h2>}</main>
 
       <footer>
         Latin word data from Wiktionary (English Wiktionary contributors, CC
