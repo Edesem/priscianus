@@ -13,8 +13,9 @@ from fastapi.testclient import TestClient
 from priscianus.api.main import app, create_app
 from priscianus.api.settings import Settings
 from priscianus.morphology.lookup import Analysis
-from test_pipeline_loop import ScriptedAPI, make_client
+from test_pipeline_loop import ScriptedAPI, answer, make_client
 from test_pipeline_verify import claim_json, reply
+from test_tutor_drills import PERFECT_3PL, DrillIndex, drills_reply, item
 from test_verifier_classify import FakeIndex
 
 REGI_DAT = Analysis("rex", "rex", "noun", "regi", {"Case": "Dat", "Number": "Sing"})
@@ -27,9 +28,9 @@ def make_app(tmp_path: Path) -> Iterator[Callable[..., TestClient]]:
     """Builds a started app (so its lifespan runs) over a scripted API; closes them afterwards."""
     with ExitStack() as stack:
 
-        def build(api: Any, **client_options: Any) -> TestClient:
+        def build(api: Any, index: Any = INDEX, **client_options: Any) -> TestClient:
             client = make_client(tmp_path, api, **client_options)
-            return stack.enter_context(TestClient(create_app(index=INDEX, client=client)))
+            return stack.enter_context(TestClient(create_app(index=index, client=client)))
 
         yield build
 
@@ -135,6 +136,86 @@ def test_a_reached_spend_cap_gives_503_spend_cap(make_app: Callable[..., TestCli
 
     assert response.status_code == 503
     assert response.json()["error"] == "spend_cap"
+
+
+def test_drills_returns_items_with_a_prompt_and_no_answer_key(
+    make_app: Callable[..., TestClient],
+) -> None:
+    api = ScriptedAPI(drills_reply(item("amo", "verb", PERFECT_3PL)))
+
+    response = make_app(api, DrillIndex()).post(
+        "/api/drills", json={"request": "perfect tense of amo", "count": 1}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": None,
+        "shortfall": 0,
+        "items": [
+            {
+                "lemma": "amo",
+                "pos": "verb",
+                "features": PERFECT_3PL,
+                "prompt": "Give the 3rd person plural perfect active indicative of amo.",
+            }
+        ],
+    }
+
+
+def test_an_impossible_drill_request_returns_the_generators_message(
+    make_app: Callable[..., TestClient],
+) -> None:
+    api = ScriptedAPI(drills_reply(message="Nouns have no person."))
+
+    body = (
+        make_app(api, DrillIndex()).post("/api/drills", json={"request": "1st person noun"}).json()
+    )
+
+    assert body["items"] == []
+    assert body["message"] == "Nouns have no person."
+
+
+def test_an_empty_drill_request_is_refused_before_any_api_call(
+    make_app: Callable[..., TestClient],
+) -> None:
+    api = ScriptedAPI()
+
+    response = make_app(api, DrillIndex()).post("/api/drills", json={"request": "  "})
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "invalid_input"
+    assert response.json()["message"]
+    assert api.messages.calls == []
+
+
+def test_asking_for_more_than_ten_items_is_refused(make_app: Callable[..., TestClient]) -> None:
+    response = make_app(ScriptedAPI(), DrillIndex()).post(
+        "/api/drills", json={"request": "amo", "count": 11}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "invalid_input"
+
+
+def test_a_drill_request_with_a_wrong_body_says_what_to_send(
+    make_app: Callable[..., TestClient],
+) -> None:
+    response = make_app(ScriptedAPI(), DrillIndex()).post("/api/drills", json={"text": "amo"})
+
+    assert response.status_code == 422
+    assert set(response.json()) == {"error", "message"}
+    assert "request" in response.json()["message"]
+
+
+def test_a_garbled_model_answer_for_drills_gives_503_model_error(
+    make_app: Callable[..., TestClient],
+) -> None:
+    api = ScriptedAPI(answer("not json"))
+
+    response = make_app(api, DrillIndex()).post("/api/drills", json={"request": "amo"})
+
+    assert response.status_code == 503
+    assert response.json()["error"] == "model_error"
 
 
 def test_settings_come_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:

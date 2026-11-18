@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from priscianus.morphology.lookup import Analysis
 from priscianus.pipeline.verify import VerifiedClaim
+from priscianus.tutor.drills import MAX_COUNT, DrillSet
 from priscianus.tutor.explain import ExplainResult
 from priscianus.tutor.words import WordResult
 
@@ -12,6 +13,11 @@ MAX_OTHER_READINGS = 50
 
 class ExplainRequest(BaseModel):
     text: str
+
+
+class DrillsRequest(BaseModel):
+    request: str
+    count: int = MAX_COUNT
 
 
 class ErrorBody(BaseModel):
@@ -51,6 +57,21 @@ class ExplainResponse(BaseModel):
     words: list[WordOut]
 
 
+class DrillItemOut(BaseModel):
+    """One question. There is no answer key: grading works the accepted forms out again."""
+
+    lemma: str
+    pos: str
+    features: dict[str, str]
+    prompt: str
+
+
+class DrillsResponse(BaseModel):
+    message: str | None
+    shortfall: int
+    items: list[DrillItemOut]
+
+
 def _reading(analysis: Analysis) -> ReadingOut:
     features = "|".join(f"{name}={value}" for name, value in sorted(analysis.features.items()))
     return ReadingOut(lemma=analysis.lemma, pos=analysis.pos, form=analysis.form, features=features)
@@ -84,3 +105,11 @@ def explain_response(result: ExplainResult) -> ExplainResponse:
         dropped_claims=result.dropped_claims,
         words=[_word(w) for w in result.words],
     )
+
+
+def drills_response(result: DrillSet) -> DrillsResponse:
+    items = [
+        DrillItemOut(lemma=i.lemma, pos=i.pos, features=dict(i.features), prompt=i.prompt)
+        for i in result.items
+    ]
+    return DrillsResponse(message=result.message, shortfall=result.shortfall, items=items)
